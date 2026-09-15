@@ -1,5 +1,5 @@
 services:
-  web:
+  ui:
     build: .
     ports:
       - "9735:80"

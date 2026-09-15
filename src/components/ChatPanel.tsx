@@ -5,17 +5,23 @@ import { ThinkingBlock } from "./ThinkingBlock";
 import { ToolCallDisplay } from "./ToolCallDisplay";
 
 const TAGLINES = [
-  "a terminal in your browser",
+  "a terminal in your browser because reasons",
   "all systems nominal",
   "green on black, the way god intended",
-  "no vibe here, just compute",
   "01 10 11 00",
   "the tui you never asked for",
 ];
 
 export function ChatPanel() {
-  const { messages, pendingText, pendingThinking, thinkingOpen, collapseThinking, activeToolCalls, isGenerating } =
-    useApp();
+  const {
+    messages,
+    pendingText,
+    pendingThinking,
+    thinkingOpen,
+    collapseThinking,
+    activeToolCalls,
+    isGenerating,
+  } = useApp();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

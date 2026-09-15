@@ -16,12 +16,12 @@ No backend code lives here.
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `npm install` | Install dependencies |
-| `npm run dev` | Vite dev server on `http://localhost:5173` |
-| `npm run build` | `tsc -b && vite build` → static output in `dist/` |
-| `npm run preview` | Serve the production build (default port 4173) |
+| Command           | Purpose                                           |
+| ----------------- | ------------------------------------------------- |
+| `npm install`     | Install dependencies                              |
+| `npm run dev`     | Vite dev server on `http://localhost:5173`        |
+| `npm run build`   | `tsc -b && vite build` → static output in `dist/` |
+| `npm run preview` | Serve the production build (default port 4173)    |
 
 There is **no lint or test framework** in this project. `npm run build` is the
 verification gate — it runs TypeScript in strict mode plus the Vite production
@@ -103,4 +103,4 @@ src/
   `$BACKEND_HOST:$BACKEND_PORT`, resolved at container start via `envsubst`
   (defaults to `host.docker.internal:9734`). See `nginx.conf` and
   `docker-compose.yml`.
-- Run: `docker compose up --build`, then open `http://localhost:8080`.
+- Run: `docker compose up --build`, then open `http://localhost:9735`.

@@ -1,48 +1,52 @@
-# oli web (`frontend/`)
+# oli-web
 
 A self-contained browser UI for the `oli` agent harness. Terminal look
 (black/green, sharp edges, JetBrains Mono), React + TypeScript + Tailwind +
 Vite. Talks to the `oli-server` WebSocket at `/v1/chat` for real-time
 streaming (text, thinking, tool calls, sub-agents, token usage, todos).
 
-This directory is intentionally self-contained — it can be lifted into its own
-repository without touching the Python harness.
+## Views
 
-## Run
+| View          | Purpose                                                                                                         |
+| ------------- | --------------------------------------------------------------------------------------------------------------- |
+| **chat**      | Streaming transcript (markdown), collapsible thinking blocks, live tool-call chips, slash-command autocomplete. |
+| **sessions**  | localStorage-backed session list — search, switch, rename, delete.                                              |
+| **todos**     | Live `todowrite` list with status/priority breakdown.                                                           |
+| **subagents** | Per-run timeline of delegated sub-agents (activity, tool calls, messages).                                      |
+| **config**    | Editable runtime config (backend, models, API keys, agent flags).                                               |
 
-Start the API server first (from the repo root):
+## Run (local dev)
+
+Requirements: Node >= 18, npm, and the `oli-server` backend
+(uvicorn on `0.0.0.0:9734`) running from the `oli-bot` repo.
 
 ```bash
-oli-server                 # uvicorn on 0.0.0.0:9734
-```
-
-Then the dev server:
-
-```bash
-cd frontend
 npm install
 npm run dev                # http://localhost:5173
 ```
 
 Vite proxies `/v1` (WebSocket included) and `/health` to
 `http://localhost:9734`, so the browser talks to the same-origin dev server.
+Without the backend the UI loads but shows no live data.
 
 Production build:
 
 ```bash
-npm run build              # tsc -b && vite build -> frontend/dist
+npm run build              # tsc -b && vite build -> dist/
 npm run preview
 ```
 
-## Views
+## Run (Docker)
 
-| View | Purpose |
-| --- | --- |
-| **chat** | Streaming transcript (markdown), collapsible thinking blocks, live tool-call chips, slash-command autocomplete. |
-| **sessions** | localStorage-backed session list — search, switch, rename, delete. |
-| **todos** | Live `todowrite` list with status/priority breakdown. |
-| **subagents** | Per-run timeline of delegated sub-agents (activity, tool calls, messages). |
-| **config** | Editable runtime config (backend, models, API keys, agent flags). |
+```bash
+docker compose up --build # http://localhost:8080
+```
+
+The container serves the production build from nginx on port 80 and proxies
+`/v1` (WebSocket) and `/health` to the backend. Point it at your backend with
+`BACKEND_HOST` / `BACKEND_PORT` environment variables — by default it reaches
+`host.docker.internal:9734` (i.e. the `oli-server` running on your host). See
+`docker-compose.yml` and `nginx.conf.template`.
 
 ## WebSocket protocol
 
@@ -77,3 +81,5 @@ src/
   `/clear`, `/config`, `/sessions`, `/todos`, `/subagents`, and `/help`. All
   other commands (`/model`, `/servers`, …) are sent to the agent as plain
   messages.
+- The app reads no environment variables; config edits in the Config view are
+  in-memory only and reset on reload.

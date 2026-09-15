@@ -55,7 +55,7 @@ src/
   types.ts               OliEvent union, domain types, COMMANDS, INITIAL_CONFIG
   components/            TopBar, StatusBar, Sidebar, ChatPanel, ChatInput,
                          MessageBubble, ThinkingBlock, ToolCallDisplay,
-                         SessionList, ConfigPage, SubAgentView, TodoPanel
+                         SessionList, ConfigPage, MCPPage, SubAgentView, TodoPanel
   context/AppContext.tsx Global state + WebSocket event reducer
   hooks/useOliSocket.ts  Auto-reconnecting WebSocket with send/clear helpers
   lib/sessions.ts        localStorage session CRUD
@@ -81,11 +81,14 @@ src/
   `oli_sessions`, see `src/lib/sessions.ts`). There is no server-side session
   storage used by this UI.
 - **Config:** The Config view edits an in-memory React state object seeded from
-  `INITIAL_CONFIG` in `src/types.ts`. Changes are **not** persisted and reset on
-  reload. This is intentional.
+  `INITIAL_CONFIG` in `src/types.ts`; it round-trips to the server over
+  `GET/PUT /v1/config`. MCP server config is a separate list (`src/types.ts`
+  `MCPServerConfig`) managed over `GET/POST /v1/mcp`, `PUT/DELETE /v1/mcp/{name}`
+  and driven from `AppContext` (`mcpServers` + CRUD helpers), rendered by
+  `MCPPage.tsx`.
 - **Slash commands:** Handled client-side where they map to UI actions:
-  `/clear`, `/config`, `/sessions`, `/todos`, `/subagents`, `/help`. All other
-  commands (`/model`, `/servers`, …) go to the agent as plain messages.
+  `/clear`, `/config`, `/sessions`, `/todos`, `/subagents`, `/mcp`, `/help`. All
+  other commands (`/model`, `/servers`, …) go to the agent as plain messages.
 
 ## Conventions
 

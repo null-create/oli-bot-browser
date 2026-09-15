@@ -8,6 +8,7 @@ import { SessionList } from "./components/SessionList";
 import { ConfigPage } from "./components/ConfigPage";
 import { SubAgentView } from "./components/SubAgentView";
 import { TodoPanel } from "./components/TodoPanel";
+import { MCPPage } from "./components/MCPPage";
 
 function MainView() {
   const { view, clearChat } = useApp();
@@ -29,6 +30,8 @@ function MainView() {
         return <SubAgentView />;
       case "todos":
         return <TodoPanel />;
+      case "mcp":
+        return <MCPPage />;
     }
   })();
 

@@ -61,10 +61,7 @@ function RunCard({ run }: { run: SubAgentRun }) {
               </div>
               <div className="max-h-64 overflow-y-auto">
                 {run.messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className="mb-1 text-xs text-terminal-text"
-                  >
+                  <div key={m.id} className="mb-1 text-xs text-terminal-text">
                     <span className="font-bold text-terminal-green">
                       {m.role === "user" ? "\u276f user" : "\u25cf assistant"}
                       {m.agentName && ` (${m.agentName})`}
@@ -77,9 +74,7 @@ function RunCard({ run }: { run: SubAgentRun }) {
             </div>
           )}
           {run.messages.length === 0 && run.toolCalls.length === 0 && (
-            <div className="text-xs text-terminal-muted">
-              no data yet...
-            </div>
+            <div className="text-xs text-terminal-muted">no data yet...</div>
           )}
         </div>
       )}

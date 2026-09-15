@@ -18,9 +18,7 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
       setShowSuggestions(false);
       return;
     }
-    const filtered = COMMANDS.filter((c) =>
-      c.startsWith(value.toLowerCase())
-    );
+    const filtered = COMMANDS.filter((c) => c.startsWith(value.toLowerCase()));
     setSuggestions(filtered);
     setShowSuggestions(filtered.length > 0 && value.length > 0);
     setSelectedIdx(-1);
@@ -119,7 +117,9 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
       )}
 
       <div className="flex items-end gap-2 px-2 py-1">
-        <span className="mb-1.5 text-terminal-green text-sm select-none">{">"}</span>
+        <span className="mb-1.5 text-terminal-green text-sm select-none">
+          {">"}
+        </span>
         <textarea
           ref={inputRef}
           value={value}

@@ -14,9 +14,7 @@ export function TopBar() {
       </div>
       <div className="flex items-center gap-2 text-terminal-muted">
         <Command size={12} />
-        <span className="truncate max-w-[40vw]">
-          {config.ollama_base_url}
-        </span>
+        <span className="truncate max-w-[40vw]">{config.ollama_base_url}</span>
       </div>
     </div>
   );

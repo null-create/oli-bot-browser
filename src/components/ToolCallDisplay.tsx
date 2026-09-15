@@ -21,7 +21,9 @@ export function ToolCallDisplay({
   const elapsed = result
     ? result.elapsed
     : ((nowMs - startedAt) / 1000).toFixed(1);
-  const isError = result ? result.result.trim().toLowerCase().startsWith("error") : false;
+  const isError = result
+    ? result.result.trim().toLowerCase().startsWith("error")
+    : false;
 
   return (
     <div className="my-1 flex items-center gap-2 border border-terminal-border bg-terminal-surface px-2 py-1 text-xs">
@@ -35,7 +37,9 @@ export function ToolCallDisplay({
         <Loader2 size={12} className="animate-spin text-terminal-green" />
       )}
       <span className="font-bold text-terminal-text">{name}</span>
-      <span className="text-terminal-muted">{"\u00b7"} {elapsed}s</span>
+      <span className="text-terminal-muted">
+        {"\u00b7"} {elapsed}s
+      </span>
     </div>
   );
 }

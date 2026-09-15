@@ -1,5 +1,5 @@
 import { useApp } from "../context/AppContext";
-import { MessageSquare, Settings, ListTodo, Network, Plus } from "lucide-react";
+import { MessageSquare, Settings, ListTodo, Network, Plug, Plus } from "lucide-react";
 import { OliView } from "../types";
 
 const NAV: { view: OliView; label: string; icon: typeof MessageSquare }[] = [
@@ -7,11 +7,20 @@ const NAV: { view: OliView; label: string; icon: typeof MessageSquare }[] = [
   { view: "sessions", label: "sessions", icon: ListTodo },
   { view: "todos", label: "todos", icon: ListTodo },
   { view: "subagents", label: "sub-agents", icon: Network },
+  { view: "mcp", label: "mcp", icon: Plug },
   { view: "config", label: "config", icon: Settings },
 ];
 
 export function Sidebar() {
-  const { view, setView, sessions, currentSessionId, newSession, switchSession, removeSession } = useApp();
+  const {
+    view,
+    setView,
+    sessions,
+    currentSessionId,
+    newSession,
+    switchSession,
+    removeSession,
+  } = useApp();
 
   return (
     <div className="flex h-full w-64 flex-col border-r border-terminal-border bg-terminal-surface">

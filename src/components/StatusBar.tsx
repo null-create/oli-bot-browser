@@ -5,7 +5,10 @@ export function StatusBar() {
 
   const mode = config.api_mode || "agent";
   const profile = config.api_profile || "default";
-  const model = config.backend === "ollama" ? config.ollama_model || "ollama" : config.openai_model || config.backend;
+  const model =
+    config.backend === "ollama"
+      ? config.ollama_model || "ollama"
+      : config.openai_model || config.backend;
   const tokens = usage.prompt_tokens + usage.completion_tokens;
   const estimatedPrefix = usage.estimated ? "~" : "";
   const isOffline = config.offline_mode;
@@ -31,11 +34,15 @@ export function StatusBar() {
             status === "connected"
               ? "text-terminal-green"
               : status === "connecting"
-              ? "text-terminal-warning"
-              : "text-terminal-error"
+                ? "text-terminal-warning"
+                : "text-terminal-error"
           }`}
         >
-          {status === "connected" ? "\u25cf" : status === "connecting" ? "\u25d1" : "\u25cf"}
+          {status === "connected"
+            ? "\u25cf"
+            : status === "connecting"
+              ? "\u25d1"
+              : "\u25cf"}
         </span>
       </div>
     </div>

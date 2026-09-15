@@ -39,7 +39,11 @@ const FIELDS: Field[] = [
     label: "huggingface api key",
     group: "HuggingFace",
   },
-  { key: "huggingface_model", label: "huggingface model", group: "HuggingFace" },
+  {
+    key: "huggingface_model",
+    label: "huggingface model",
+    group: "HuggingFace",
+  },
   {
     key: "huggingface_small_model",
     label: "huggingface small model",
@@ -214,7 +218,9 @@ function groupFields(fields: Field[]): Map<string, Field[]> {
   return groups;
 }
 
-function stringifyHeaders(headers: Record<string, unknown> | undefined | null): string {
+function stringifyHeaders(
+  headers: Record<string, unknown> | undefined | null,
+): string {
   if (!headers || typeof headers !== "object") return "{}";
   return JSON.stringify(headers, null, 2);
 }
@@ -223,7 +229,7 @@ export function ConfigPage() {
   const { config, fetchConfig, saveConfig } = useApp();
   const [draft, setDraft] = useState<OliConfig>({ ...config });
   const [headersText, setHeadersText] = useState<string>(
-    stringifyHeaders(config.openai_optional_headers)
+    stringifyHeaders(config.openai_optional_headers),
   );
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -263,7 +269,11 @@ export function ConfigPage() {
       const trimmed = headersText.trim();
       if (trimmed !== "") {
         const parsed = JSON.parse(trimmed);
-        if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        if (
+          typeof parsed !== "object" ||
+          parsed === null ||
+          Array.isArray(parsed)
+        ) {
           throw new Error("must be a JSON object");
         }
         headers = parsed;

@@ -62,7 +62,16 @@ export type OliEvent =
       data: { todos: TodoItem[]; task_id?: string; agent_name?: string };
     };
 
-export type OliView = "chat" | "config" | "sessions" | "subagents" | "todos";
+export type OliView = "chat" | "config" | "sessions" | "subagents" | "todos" | "mcp";
+
+export type MCPServerConfig = {
+  name: string;
+  transport: "stdio" | "http";
+  command: string;
+  args: string[];
+  env: Record<string, string> | null;
+  url: string;
+};
 
 export type ChatMessage = {
   id: string;

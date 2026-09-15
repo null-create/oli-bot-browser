@@ -15,7 +15,12 @@ function StatusIcon({ status }: { status: TodoItem["status"] }) {
     case "pending":
       return <Circle size={12} className="text-terminal-muted" />;
     case "in_progress":
-      return <CircleDot size={12} className="text-terminal-green animate-pulse-green" />;
+      return (
+        <CircleDot
+          size={12}
+          className="text-terminal-green animate-pulse-green"
+        />
+      );
     case "completed":
       return <CheckCircle2 size={12} className="text-terminal-green" />;
     case "cancelled":
@@ -93,7 +98,9 @@ export function TodoPanel() {
         <span>
           {todos.filter((t) => t.status === "in_progress").length} in progress
         </span>
-        <span>{todos.filter((t) => t.status === "pending").length} pending</span>
+        <span>
+          {todos.filter((t) => t.status === "pending").length} pending
+        </span>
         <span>
           {todos.filter((t) => t.status === "completed").length} completed
         </span>

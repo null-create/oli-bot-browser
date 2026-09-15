@@ -4,7 +4,10 @@ import { ChatMessage } from "../types";
 
 function fmtTime(ts: number): string {
   const d = new Date(ts);
-  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function MessageBubble({
@@ -46,7 +49,9 @@ export function MessageBubble({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-[11px] text-terminal-muted">
-          <span className={isUser ? "text-terminal-info" : "text-terminal-green"}>
+          <span
+            className={isUser ? "text-terminal-info" : "text-terminal-green"}
+          >
             {isUser ? "\u276f you" : "\u25cf assistant"}
           </span>
           <span className="text-terminal-green-dim">

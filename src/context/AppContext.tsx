@@ -17,6 +17,7 @@ import {
   saveSession,
 } from "../lib/sessions";
 import {
+  MCPServerConfig,
   OliConfig,
   OliEvent,
   OliView,
@@ -46,8 +47,17 @@ type AppState = {
   currentSessionId: string;
   subAgents: SubAgentRun[];
   todos: TodoItem[];
-  usage: { prompt_tokens: number; completion_tokens: number; estimated: boolean };
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    estimated: boolean;
+  };
   config: OliConfig;
+  mcpServers: MCPServerConfig[];
+  fetchMcpServers: () => Promise<void>;
+  addMcpServer: (cfg: MCPServerConfig) => Promise<boolean>;
+  updateMcpServer: (name: string, cfg: MCPServerConfig) => Promise<boolean>;
+  removeMcpServer: (name: string) => Promise<boolean>;
   collapseThinking: (open: boolean) => void;
   setView: (view: OliView) => void;
   sendMessage: (text: string) => void;
@@ -93,7 +103,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return [fresh];
   });
   const [currentSessionId, setCurrentSessionId] = useState<string>(
-    sessions[0]?.id ?? ""
+    sessions[0]?.id ?? "",
   );
   const currentSessionIdRef = useRef<string>(currentSessionId);
   currentSessionIdRef.current = currentSessionId;
@@ -103,10 +113,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [thinkingOpen, setThinkingOpen] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeToolCalls, setActiveToolCalls] = useState<Map<number, string>>(
-    new Map()
+    new Map(),
   );
   const [subAgents, setSubAgents] = useState<SubAgentRun[]>([]);
   const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [mcpServers, setMcpServers] = useState<MCPServerConfig[]>([]);
   const [usage, setUsage] = useState({
     prompt_tokens: 0,
     completion_tokens: 0,
@@ -118,253 +129,251 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pendingToolStart = useRef<number>(0);
   const activeToolQueue = useRef<number[]>([]);
 
-  const handleEvent = useCallback(
-    (ev: OliEvent) => {
-      switch (ev.type) {
-        case "text_chunk": {
-          if (ev.data.task_id) {
-            const taskId = ev.data.task_id!;
-            setSubAgents((prev) =>
-              prev.map((r) => {
-                if (r.task_id !== taskId) return r;
-                const msgs = [...r.messages];
-                const last = msgs[msgs.length - 1];
-                if (last && last.role === "assistant") {
-                  msgs[msgs.length - 1] = {
-                    ...last,
-                    content: last.content + ev.data.text,
-                  };
-                } else {
-                  msgs.push({
-                    id: makeId(),
-                    role: "assistant",
-                    content: ev.data.text,
-                    timestamp: now(),
-                    subAgentId: taskId,
-                    agentName: ev.data.agent_name,
-                  });
-                }
-                return { ...r, messages: msgs, activity: "streaming..." };
-              })
-            );
-            return;
-          }
-          setIsGenerating(true);
-          pendingTextRef.current += ev.data.text;
-          setPendingText(pendingTextRef.current);
-          setThinkingOpen(false);
+  const handleEvent = useCallback((ev: OliEvent) => {
+    switch (ev.type) {
+      case "text_chunk": {
+        if (ev.data.task_id) {
+          const taskId = ev.data.task_id!;
+          setSubAgents((prev) =>
+            prev.map((r) => {
+              if (r.task_id !== taskId) return r;
+              const msgs = [...r.messages];
+              const last = msgs[msgs.length - 1];
+              if (last && last.role === "assistant") {
+                msgs[msgs.length - 1] = {
+                  ...last,
+                  content: last.content + ev.data.text,
+                };
+              } else {
+                msgs.push({
+                  id: makeId(),
+                  role: "assistant",
+                  content: ev.data.text,
+                  timestamp: now(),
+                  subAgentId: taskId,
+                  agentName: ev.data.agent_name,
+                });
+              }
+              return { ...r, messages: msgs, activity: "streaming..." };
+            }),
+          );
           return;
         }
-        case "thinking": {
-          if (ev.data.task_id) {
-            const taskId = ev.data.task_id!;
-            setSubAgents((prev) =>
-              prev.map((r) =>
-                r.task_id === taskId ? { ...r, activity: "thinking..." } : r
-              )
-            );
-            return;
-          }
-          setPendingThinking((t) => t + ev.data.text);
+        setIsGenerating(true);
+        pendingTextRef.current += ev.data.text;
+        setPendingText(pendingTextRef.current);
+        setThinkingOpen(false);
+        return;
+      }
+      case "thinking": {
+        if (ev.data.task_id) {
+          const taskId = ev.data.task_id!;
+          setSubAgents((prev) =>
+            prev.map((r) =>
+              r.task_id === taskId ? { ...r, activity: "thinking..." } : r,
+            ),
+          );
           return;
         }
-        case "tool_call_executing": {
-          if (ev.data.task_id) {
-            const taskId = ev.data.task_id!;
-            const name = ev.data.name;
-            setSubAgents((prev) =>
-              prev.map((r) =>
-                r.task_id === taskId ? { ...r, activity: `calling ${name}` } : r
-              )
-            );
-            return;
-          }
-          setIsGenerating(true);
-          pendingToolStart.current = now();
-          {
-            const startedAt = pendingToolStart.current;
-            activeToolQueue.current.push(startedAt);
+        setPendingThinking((t) => t + ev.data.text);
+        return;
+      }
+      case "tool_call_executing": {
+        if (ev.data.task_id) {
+          const taskId = ev.data.task_id!;
+          const name = ev.data.name;
+          setSubAgents((prev) =>
+            prev.map((r) =>
+              r.task_id === taskId ? { ...r, activity: `calling ${name}` } : r,
+            ),
+          );
+          return;
+        }
+        setIsGenerating(true);
+        pendingToolStart.current = now();
+        {
+          const startedAt = pendingToolStart.current;
+          activeToolQueue.current.push(startedAt);
+          setActiveToolCalls((prev) => {
+            const next = new Map(prev);
+            next.set(startedAt, ev.data.name);
+            return next;
+          });
+        }
+        return;
+      }
+      case "tool_call_result": {
+        if (ev.data.task_id) {
+          const taskId = ev.data.task_id!;
+          const name = ev.data.name;
+          setSubAgents((prev) =>
+            prev.map((r) =>
+              r.task_id === taskId
+                ? {
+                    ...r,
+                    activity: `tool result: ${name}`,
+                    toolCalls: [
+                      ...r.toolCalls,
+                      {
+                        name,
+                        parameters: {},
+                        startTime: 0,
+                        result: ev.data.result,
+                        elapsed: 0,
+                      },
+                    ],
+                  }
+                : r,
+            ),
+          );
+          return;
+        }
+        {
+          const startedAt = activeToolQueue.current.shift();
+          if (startedAt !== undefined) {
             setActiveToolCalls((prev) => {
+              if (!prev.has(startedAt)) return prev;
               const next = new Map(prev);
-              next.set(startedAt, ev.data.name);
+              next.delete(startedAt);
               return next;
             });
           }
-          return;
         }
-        case "tool_call_result": {
-          if (ev.data.task_id) {
-            const taskId = ev.data.task_id!;
-            const name = ev.data.name;
-            setSubAgents((prev) =>
-              prev.map((r) =>
-                r.task_id === taskId
-                  ? {
-                      ...r,
-                      activity: `tool result: ${name}`,
-                      toolCalls: [
-                        ...r.toolCalls,
-                        {
-                          name,
-                          parameters: {},
-                          startTime: 0,
-                          result: ev.data.result,
-                          elapsed: 0,
-                        },
-                      ],
-                    }
-                  : r
-              )
-            );
-            return;
-          }
-          {
-            const startedAt = activeToolQueue.current.shift();
-            if (startedAt !== undefined) {
-              setActiveToolCalls((prev) => {
-                if (!prev.has(startedAt)) return prev;
-                const next = new Map(prev);
-                next.delete(startedAt);
-                return next;
-              });
-            }
-          }
-          return;
-        }
-        case "assistant_response": {
-          if (ev.data.task_id) {
-            const taskId = ev.data.task_id!;
-            setSubAgents((prev) =>
-              prev.map((r) =>
-                r.task_id === taskId ? { ...r, activity: "streaming..." } : r
-              )
-            );
-            return;
-          }
-          if (ev.data.content && !pendingTextRef.current) {
-            pendingTextRef.current = ev.data.content;
-            setPendingText(pendingTextRef.current);
-          }
-          return;
-        }
-        case "usage": {
-          setUsage((u) => ({
-            prompt_tokens: u.prompt_tokens + ev.data.prompt_tokens,
-            completion_tokens: u.completion_tokens + ev.data.completion_tokens,
-            estimated: u.estimated || ev.data.estimated,
-          }));
-          return;
-        }
-        case "error": {
-          setMessages((m) => [
-            ...m,
-            {
-              id: makeId(),
-              role: "assistant",
-              timestamp: now(),
-              content: `\u2717 ${ev.data.message}`,
-            },
-          ]);
-          pendingTextRef.current = "";
-          setPendingText("");
-          setIsGenerating(false);
-          return;
-        }
-        case "done": {
-          if (ev.data.full_text) {
-            const text =
-              pendingTextRef.current && pendingTextRef.current !== ev.data.full_text
-                ? pendingTextRef.current + ev.data.full_text
-                : ev.data.full_text;
-            const line: ChatLine = {
-              id: makeId(),
-              role: "assistant",
-              content: text,
-              timestamp: now(),
-            };
-            setMessages((m) => [...m, line]);
-            const sid = currentSessionIdRef.current;
-            setSessions((prev) =>
-              prev.map((s) =>
-                s.id === sid ? { ...s, messages: [...s.messages, line] } : s
-              )
-            );
-          }
-          pendingTextRef.current = "";
-          setPendingText("");
-          setPendingThinking("");
-          setThinkingOpen(true);
-          activeToolQueue.current = [];
-          setActiveToolCalls(new Map());
-          setIsGenerating(false);
-          return;
-        }
-        case "cleared": {
-          setMessages([]);
-          pendingTextRef.current = "";
-          setPendingText("");
-          setPendingThinking("");
-          setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
-          setIsGenerating(false);
-          return;
-        }
-        case "connected":
-          return;
-        case "sub_agent_started": {
-          setSubAgents((prev) => [
-            ...prev,
-            {
-              task_id: ev.data.task_id,
-              agent_name: ev.data.agent_name,
-              pool_name: ev.data.pool_name,
-              task: ev.data.task,
-              status: "running",
-              activity: "queued",
-              messages: [],
-              toolCalls: [],
-            },
-          ]);
-          return;
-        }
-        case "sub_agent_progress": {
-          setSubAgents((prev) =>
-            prev.map((r) =>
-              r.task_id === ev.data.task_id
-                ? { ...r, status: ev.data.status, activity: ev.data.activity }
-                : r
-            )
-          );
-          return;
-        }
-        case "sub_agent_completed": {
-          setSubAgents((prev) =>
-            prev.map((r) =>
-              r.task_id === ev.data.task_id
-                ? { ...r, status: ev.data.status, activity: ev.data.status }
-                : r
-            )
-          );
-          return;
-        }
-        case "todo": {
-          if (ev.data.task_id) {
-            const taskId = ev.data.task_id;
-            setSubAgents((prev) =>
-              prev.map((r) =>
-                r.task_id === taskId ? { ...r, todos: ev.data.todos } : r
-              )
-            );
-          } else {
-            setTodos(ev.data.todos);
-          }
-          return;
-        }
-        default:
-          return;
+        return;
       }
-    },
-    []
-  );
+      case "assistant_response": {
+        if (ev.data.task_id) {
+          const taskId = ev.data.task_id!;
+          setSubAgents((prev) =>
+            prev.map((r) =>
+              r.task_id === taskId ? { ...r, activity: "streaming..." } : r,
+            ),
+          );
+          return;
+        }
+        if (ev.data.content && !pendingTextRef.current) {
+          pendingTextRef.current = ev.data.content;
+          setPendingText(pendingTextRef.current);
+        }
+        return;
+      }
+      case "usage": {
+        setUsage((u) => ({
+          prompt_tokens: u.prompt_tokens + ev.data.prompt_tokens,
+          completion_tokens: u.completion_tokens + ev.data.completion_tokens,
+          estimated: u.estimated || ev.data.estimated,
+        }));
+        return;
+      }
+      case "error": {
+        setMessages((m) => [
+          ...m,
+          {
+            id: makeId(),
+            role: "assistant",
+            timestamp: now(),
+            content: `\u2717 ${ev.data.message}`,
+          },
+        ]);
+        pendingTextRef.current = "";
+        setPendingText("");
+        setIsGenerating(false);
+        return;
+      }
+      case "done": {
+        if (ev.data.full_text) {
+          const text =
+            pendingTextRef.current &&
+            pendingTextRef.current !== ev.data.full_text
+              ? pendingTextRef.current + ev.data.full_text
+              : ev.data.full_text;
+          const line: ChatLine = {
+            id: makeId(),
+            role: "assistant",
+            content: text,
+            timestamp: now(),
+          };
+          setMessages((m) => [...m, line]);
+          const sid = currentSessionIdRef.current;
+          setSessions((prev) =>
+            prev.map((s) =>
+              s.id === sid ? { ...s, messages: [...s.messages, line] } : s,
+            ),
+          );
+        }
+        pendingTextRef.current = "";
+        setPendingText("");
+        setPendingThinking("");
+        setThinkingOpen(true);
+        activeToolQueue.current = [];
+        setActiveToolCalls(new Map());
+        setIsGenerating(false);
+        return;
+      }
+      case "cleared": {
+        setMessages([]);
+        pendingTextRef.current = "";
+        setPendingText("");
+        setPendingThinking("");
+        setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
+        setIsGenerating(false);
+        return;
+      }
+      case "connected":
+        return;
+      case "sub_agent_started": {
+        setSubAgents((prev) => [
+          ...prev,
+          {
+            task_id: ev.data.task_id,
+            agent_name: ev.data.agent_name,
+            pool_name: ev.data.pool_name,
+            task: ev.data.task,
+            status: "running",
+            activity: "queued",
+            messages: [],
+            toolCalls: [],
+          },
+        ]);
+        return;
+      }
+      case "sub_agent_progress": {
+        setSubAgents((prev) =>
+          prev.map((r) =>
+            r.task_id === ev.data.task_id
+              ? { ...r, status: ev.data.status, activity: ev.data.activity }
+              : r,
+          ),
+        );
+        return;
+      }
+      case "sub_agent_completed": {
+        setSubAgents((prev) =>
+          prev.map((r) =>
+            r.task_id === ev.data.task_id
+              ? { ...r, status: ev.data.status, activity: ev.data.status }
+              : r,
+          ),
+        );
+        return;
+      }
+      case "todo": {
+        if (ev.data.task_id) {
+          const taskId = ev.data.task_id;
+          setSubAgents((prev) =>
+            prev.map((r) =>
+              r.task_id === taskId ? { ...r, todos: ev.data.todos } : r,
+            ),
+          );
+        } else {
+          setTodos(ev.data.todos);
+        }
+        return;
+      }
+      default:
+        return;
+    }
+  }, []);
 
   const { status, send, clear } = useOliSocket(handleEvent);
 
@@ -391,8 +400,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                     : s.name,
                 messages: [...s.messages, userMsg],
               }
-            : s
-        )
+            : s,
+        ),
       );
       pendingTextRef.current = "";
       setPendingText("");
@@ -400,7 +409,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setIsGenerating(true);
       send({ content: text });
     },
-    [isGenerating, send, currentSessionId]
+    [isGenerating, send, currentSessionId],
   );
 
   const clearChat = useCallback(() => {
@@ -410,7 +419,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPendingThinking("");
     setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
     setSessions((prev) =>
-      prev.map((s) => (s.id === currentSessionId ? { ...s, messages: [] } : s))
+      prev.map((s) => (s.id === currentSessionId ? { ...s, messages: [] } : s)),
     );
     clear();
   }, [clear, currentSessionId]);
@@ -436,6 +445,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         case "/subagents":
           setView("subagents");
           return true;
+        case "/mcp":
+          setView("mcp");
+          fetchMcpServers();
+          return true;
         case "/help": {
           setMessages((m) => [
             ...m,
@@ -449,7 +462,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 "- `/config` — open the config view\n" +
                 "- `/sessions` — open the sessions view\n" +
                 "- `/todos` — open the to-do view\n" +
-                "- `/subagents` — open the sub-agents view\n\n" +
+                "- `/subagents` — open the sub-agents view\n" +
+                "- `/mcp` — open the MCP server configuration view\n\n" +
                 "Any other command (`/model`, `/servers`, …) is sent to the agent.",
             },
           ]);
@@ -459,7 +473,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return false;
       }
     },
-    [clearChat]
+    [clearChat],
   );
 
   const newSession = useCallback(() => {
@@ -486,7 +500,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
       clear();
     },
-    [clear]
+    [clear],
   );
 
   const removeSession = useCallback(
@@ -502,7 +516,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         clear();
       }
     },
-    [currentSessionId, clear]
+    [currentSessionId, clear],
   );
 
   const renameCurrentSession = useCallback(
@@ -510,7 +524,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       renameSession(currentSessionId, name);
       setSessions(listSessions());
     },
-    [currentSessionId]
+    [currentSessionId],
   );
 
   const fetchConfig = useCallback(async () => {
@@ -541,12 +555,82 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const fetchMcpServers = useCallback(async () => {
+    try {
+      const res = await fetch("/v1/mcp");
+      if (!res.ok) return;
+      setMcpServers((await res.json()) as MCPServerConfig[]);
+    } catch (e) {
+      console.error("Failed to fetch MCP servers from server", e);
+    }
+  }, []);
+
+  const addMcpServer = useCallback(
+    async (cfg: MCPServerConfig): Promise<boolean> => {
+      try {
+        const res = await fetch("/v1/mcp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cfg),
+        });
+        if (!res.ok) return false;
+        setMcpServers((await res.json()) as MCPServerConfig[]);
+        return true;
+      } catch (e) {
+        console.error("Failed to add MCP server", e);
+        return false;
+      }
+    },
+    [],
+  );
+
+  const updateMcpServer = useCallback(
+    async (name: string, cfg: MCPServerConfig): Promise<boolean> => {
+      try {
+        const res = await fetch(`/v1/mcp/${encodeURIComponent(name)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cfg),
+        });
+        if (!res.ok) return false;
+        setMcpServers((await res.json()) as MCPServerConfig[]);
+        return true;
+      } catch (e) {
+        console.error("Failed to update MCP server", e);
+        return false;
+      }
+    },
+    [],
+  );
+
+  const removeMcpServer = useCallback(
+    async (name: string): Promise<boolean> => {
+      try {
+        const res = await fetch(`/v1/mcp/${encodeURIComponent(name)}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) return false;
+        setMcpServers((await res.json()) as MCPServerConfig[]);
+        return true;
+      } catch (e) {
+        console.error("Failed to remove MCP server", e);
+        return false;
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     fetchConfig();
   }, [fetchConfig]);
+
+  useEffect(() => {
+    fetchMcpServers();
+  }, [fetchMcpServers]);
   const resetUsage = useCallback(
-    () => setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false }),
-    []
+    () =>
+      setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false }),
+    [],
   );
 
   const value = useMemo(
@@ -565,6 +649,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       todos,
       usage,
       config,
+      mcpServers,
+      fetchMcpServers,
+      addMcpServer,
+      updateMcpServer,
+      removeMcpServer,
       collapseThinking: setThinkingOpen,
       setView,
       sendMessage,
@@ -593,6 +682,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       todos,
       usage,
       config,
+      mcpServers,
+      fetchMcpServers,
+      addMcpServer,
+      updateMcpServer,
+      removeMcpServer,
       sendMessage,
       runCommand,
       clearChat,
@@ -600,8 +694,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       switchSession,
       removeSession,
       renameCurrentSession,
-      fetchConfig,
+fetchConfig,
       saveConfig,
+      fetchMcpServers,
+      addMcpServer,
+      updateMcpServer,
+      removeMcpServer,
       resetUsage,
     ]
   );

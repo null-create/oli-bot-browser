@@ -12,8 +12,14 @@ function fmt(ts: number): string {
 }
 
 export function SessionList() {
-  const { sessions, currentSessionId, switchSession, removeSession, renameCurrentSession, setView } =
-    useApp();
+  const {
+    sessions,
+    currentSessionId,
+    switchSession,
+    removeSession,
+    renameCurrentSession,
+    setView,
+  } = useApp();
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -21,7 +27,7 @@ export function SessionList() {
   const filtered = sessions.filter(
     (s) =>
       s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.id.includes(search)
+      s.id.includes(search),
   );
 
   const startRename = (id: string, currentName: string) => {
@@ -41,7 +47,10 @@ export function SessionList() {
       <h2 className="mb-3 text-sm font-bold text-terminal-green">sessions</h2>
 
       <div className="relative mb-3">
-        <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-terminal-muted" />
+        <Search
+          size={14}
+          className="absolute left-2 top-1/2 -translate-y-1/2 text-terminal-muted"
+        />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -52,7 +61,9 @@ export function SessionList() {
 
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 && (
-          <div className="py-8 text-center text-xs text-terminal-muted">no sessions found</div>
+          <div className="py-8 text-center text-xs text-terminal-muted">
+            no sessions found
+          </div>
         )}
         {filtered.map((s) => (
           <div
@@ -82,7 +93,9 @@ export function SessionList() {
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
-                <span className="truncate text-xs font-bold">{s.name || "untitled"}</span>
+                <span className="truncate text-xs font-bold">
+                  {s.name || "untitled"}
+                </span>
               )}
               <div className="flex gap-1 opacity-0 group-hover:opacity-100">
                 <button

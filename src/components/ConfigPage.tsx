@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { OliConfig } from "../types";
 import { Save, RotateCcw } from "lucide-react";
@@ -19,17 +19,38 @@ const FIELDS: Field[] = [
   { key: "ollama_base_url", label: "ollama base url", group: "Ollama" },
   { key: "ollama_model", label: "ollama model", group: "Ollama" },
   { key: "ollama_small_model", label: "ollama small model", group: "Ollama" },
-  { key: "max_tokens", label: "max tokens", type: "number", group: "Generation" },
-  { key: "temperature", label: "temperature", type: "number", group: "Generation" },
-  { key: "max_tool_iterations", label: "max tool iterations", type: "number", group: "Agent" },
-  { key: "offline_mode", label: "offline mode", type: "toggle", group: "Agent" },
+  {
+    key: "max_tokens",
+    label: "max tokens",
+    type: "number",
+    group: "Generation",
+  },
+  {
+    key: "temperature",
+    label: "temperature",
+    type: "number",
+    group: "Generation",
+  },
+  {
+    key: "max_tool_iterations",
+    label: "max tool iterations",
+    type: "number",
+    group: "Agent",
+  },
+  {
+    key: "offline_mode",
+    label: "offline mode",
+    type: "toggle",
+    group: "Agent",
+  },
   { key: "dry_run", label: "dry run", type: "toggle", group: "Agent" },
-  { key: "use_agent_pool", label: "use agent pool", type: "toggle", group: "Agent" },
+  {
+    key: "use_agent_pool",
+    label: "use agent pool",
+    type: "toggle",
+    group: "Agent",
+  },
   { key: "log_level", label: "log level", group: "System" },
-  { key: "api_host", label: "api host", group: "System" },
-  { key: "api_port", label: "api port", type: "number", group: "System" },
-  { key: "api_profile", label: "api profile", group: "System" },
-  { key: "api_mode", label: "api mode", group: "System" },
 ];
 
 function groupFields(fields: Field[]): Map<string, Field[]> {
@@ -43,13 +64,23 @@ function groupFields(fields: Field[]): Map<string, Field[]> {
 }
 
 export function ConfigPage() {
-  const { config, updateConfig } = useApp();
+  const { config, fetchConfig, saveConfig } = useApp();
   const [draft, setDraft] = useState<OliConfig>({ ...config });
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
+
+  useEffect(() => {
+    setDraft({ ...config });
+  }, [config]);
 
   const handleChange = useCallback(
     (key: keyof OliConfig, raw: string | boolean) => {
       setSaved(false);
+      setSaveError(false);
       setDraft((d) => {
         const next = { ...d };
         const field = FIELDS.find((f) => f.key === key);
@@ -63,13 +94,19 @@ export function ConfigPage() {
         return next;
       });
     },
-    []
+    [],
   );
 
-  const save = () => {
-    updateConfig(draft);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const save = async () => {
+    const ok = await saveConfig(draft);
+    if (ok) {
+      setSaved(true);
+      setSaveError(false);
+      setTimeout(() => setSaved(false), 2000);
+    } else {
+      setSaveError(true);
+      setSaved(false);
+    }
   };
 
   const reset = () => setDraft({ ...config });
@@ -91,9 +128,14 @@ export function ConfigPage() {
             onClick={save}
             className="flex items-center gap-1 border border-terminal-green bg-terminal-panel px-2 py-1 text-xs text-terminal-green hover:bg-terminal-panel-selected"
           >
-            <Save size={12} /> {saved ? "saved!" : "save"}
+            <Save size={12} />{" "}
+            {saveError ? "save failed" : saved ? "saved!" : "save"}
           </button>
         </div>
+      </div>
+
+      <div className="mb-3 border border-terminal-border bg-terminal-surface px-3 py-2 text-xs text-terminal-muted">
+        changes are saved to the server and require a restart to take effect.
       </div>
 
       <div className="flex-1 overflow-y-auto">

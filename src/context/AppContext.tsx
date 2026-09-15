@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -56,7 +57,8 @@ type AppState = {
   switchSession: (id: string) => void;
   removeSession: (id: string) => void;
   renameCurrentSession: (name: string) => void;
-  updateConfig: (cfg: OliConfig) => void;
+  fetchConfig: () => Promise<void>;
+  saveConfig: (cfg: OliConfig) => Promise<boolean>;
   resetUsage: () => void;
 };
 
@@ -511,7 +513,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [currentSessionId]
   );
 
-  const updateConfig = useCallback((cfg: OliConfig) => setConfig(cfg), []);
+  const fetchConfig = useCallback(async () => {
+    try {
+      const res = await fetch("/v1/config");
+      if (!res.ok) return;
+      const data = (await res.json()) as OliConfig;
+      setConfig((prev) => ({ ...prev, ...data }));
+    } catch (e) {
+      console.error("Failed to fetch config from server", e);
+    }
+  }, []);
+
+  const saveConfig = useCallback(async (cfg: OliConfig): Promise<boolean> => {
+    try {
+      const res = await fetch("/v1/config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cfg),
+      });
+      if (!res.ok) return false;
+      const data = (await res.json()) as OliConfig;
+      setConfig(data);
+      return true;
+    } catch (e) {
+      console.error("Failed to save config to server", e);
+      return false;
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
   const resetUsage = useCallback(
     () => setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false }),
     []
@@ -542,7 +574,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       switchSession,
       removeSession,
       renameCurrentSession,
-      updateConfig,
+      fetchConfig,
+      saveConfig,
       resetUsage,
     }),
     [
@@ -567,7 +600,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       switchSession,
       removeSession,
       renameCurrentSession,
-      updateConfig,
+      fetchConfig,
+      saveConfig,
       resetUsage,
     ]
   );

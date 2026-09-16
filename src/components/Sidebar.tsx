@@ -5,6 +5,7 @@ import {
   ListTodo,
   Network,
   Plug,
+  FolderOpen,
   Plus,
 } from "lucide-react";
 import { OliView } from "../types";
@@ -12,6 +13,7 @@ import { OliView } from "../types";
 const NAV: { view: OliView; label: string; icon: typeof MessageSquare }[] = [
   { view: "chat", label: "chat", icon: MessageSquare },
   { view: "sessions", label: "sessions", icon: ListTodo },
+  { view: "workspace", label: "workspaces", icon: FolderOpen },
   { view: "todos", label: "todos", icon: ListTodo },
   { view: "subagents", label: "sub-agents", icon: Network },
   { view: "mcp", label: "mcp", icon: Plug },

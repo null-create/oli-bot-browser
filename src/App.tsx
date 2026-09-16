@@ -9,6 +9,7 @@ import { ConfigPage } from "./components/ConfigPage";
 import { SubAgentView } from "./components/SubAgentView";
 import { TodoPanel } from "./components/TodoPanel";
 import { MCPPage } from "./components/MCPPage";
+import { WorkspacePage } from "./components/WorkspacePage";
 
 function MainView() {
   const { view, clearChat } = useApp();
@@ -32,6 +33,8 @@ function MainView() {
         return <TodoPanel />;
       case "mcp":
         return <MCPPage />;
+      case "workspace":
+        return <WorkspacePage />;
     }
   })();
 

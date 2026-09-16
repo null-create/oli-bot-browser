@@ -80,7 +80,8 @@ export type OliView =
   | "sessions"
   | "subagents"
   | "todos"
-  | "mcp";
+  | "mcp"
+  | "workspace";
 
 export type MCPServerConfig = {
   name: string;
@@ -155,6 +156,25 @@ export type Session = {
   totalTokens?: number;
   totalTokensEstimated?: boolean;
   msgCount?: number;
+};
+
+export type FsEntry = {
+  name: string;
+  path: string;
+  type: "dir" | "file";
+  sensitive: boolean;
+};
+
+export type DirectoryListing = {
+  path: string;
+  sensitive: boolean;
+  entries: FsEntry[];
+};
+
+export type WorkspaceState = {
+  current: string | null;
+  sensitive: boolean;
+  workspaces: string[];
 };
 
 export type OliConfig = {

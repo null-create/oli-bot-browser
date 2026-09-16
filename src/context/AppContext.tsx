@@ -18,6 +18,11 @@ import {
   sessionFromMeta,
 } from "../lib/sessions";
 import {
+  fetchWorkspace as fetchWorkspaceApi,
+  setWorkspace as setWorkspaceApi,
+  unsetWorkspace as unsetWorkspaceApi,
+} from "../lib/workspace";
+import {
   MCPServerConfig,
   OliConfig,
   OliEvent,
@@ -25,6 +30,7 @@ import {
   Session,
   SubAgentRun,
   TodoItem,
+  WorkspaceState,
   INITIAL_CONFIG,
 } from "../types";
 
@@ -55,6 +61,10 @@ type AppState = {
   };
   config: OliConfig;
   mcpServers: MCPServerConfig[];
+  workspace: WorkspaceState | null;
+  fetchWorkspace: () => Promise<void>;
+  setWorkspace: (path: string) => Promise<boolean>;
+  unsetWorkspace: () => Promise<void>;
   fetchMcpServers: () => Promise<void>;
   addMcpServer: (cfg: MCPServerConfig) => Promise<boolean>;
   updateMcpServer: (name: string, cfg: MCPServerConfig) => Promise<boolean>;
@@ -111,6 +121,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [subAgents, setSubAgents] = useState<SubAgentRun[]>([]);
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [mcpServers, setMcpServers] = useState<MCPServerConfig[]>([]);
+  const [workspace, setWorkspaceState] = useState<WorkspaceState | null>(null);
   const [usage, setUsage] = useState({
     prompt_tokens: 0,
     completion_tokens: 0,
@@ -475,6 +486,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setView("mcp");
           fetchMcpServers();
           return true;
+        case "/workspace":
+          setView("workspace");
+          fetchWorkspace();
+          return true;
         case "/help": {
           setMessages((m) => [
             ...m,
@@ -489,6 +504,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 "- `/sessions` — open the sessions view\n" +
                 "- `/todos` — open the to-do view\n" +
                 "- `/subagents` — open the sub-agents view\n" +
+                "- `/workspace` — open the workspace view\n" +
                 "- `/mcp` — open the MCP server configuration view\n\n" +
                 "Any other command (`/model`, `/servers`, …) is sent to the agent.",
             },
@@ -671,6 +687,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const fetchWorkspace = useCallback(async () => {
+    try {
+      setWorkspaceState(await fetchWorkspaceApi());
+    } catch (e) {
+      console.error("Failed to fetch workspace from server", e);
+    }
+  }, []);
+
+  const setWorkspace = useCallback(async (path: string): Promise<boolean> => {
+    try {
+      setWorkspaceState(await setWorkspaceApi(path));
+      return true;
+    } catch (e) {
+      console.error("Failed to set workspace on server", e);
+      return false;
+    }
+  }, []);
+
+  const unsetWorkspace = useCallback(async () => {
+    try {
+      setWorkspaceState(await unsetWorkspaceApi());
+    } catch (e) {
+      console.error("Failed to clear workspace on server", e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchConfig();
   }, [fetchConfig]);
@@ -678,6 +720,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchMcpServers();
   }, [fetchMcpServers]);
+
+  useEffect(() => {
+    fetchWorkspace();
+  }, [fetchWorkspace]);
 
   useEffect(() => {
     let cancelled = false;
@@ -734,6 +780,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       usage,
       config,
       mcpServers,
+      workspace,
+      fetchWorkspace,
+      setWorkspace,
+      unsetWorkspace,
       fetchMcpServers,
       addMcpServer,
       updateMcpServer,
@@ -767,6 +817,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       usage,
       config,
       mcpServers,
+      workspace,
+      fetchWorkspace,
+      setWorkspace,
+      unsetWorkspace,
       fetchMcpServers,
       addMcpServer,
       updateMcpServer,

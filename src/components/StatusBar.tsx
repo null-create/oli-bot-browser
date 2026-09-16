@@ -1,7 +1,7 @@
 import { useApp } from "../context/AppContext";
 
 export function StatusBar() {
-  const { config, usage, status } = useApp();
+  const { config, usage, status, workspace } = useApp();
 
   const mode = config.api_mode || "agent";
   const profile = config.api_profile || "default";
@@ -12,6 +12,7 @@ export function StatusBar() {
   const tokens = usage.prompt_tokens + usage.completion_tokens;
   const estimatedPrefix = usage.estimated ? "~" : "";
   const isOffline = config.offline_mode;
+  const ws = workspace?.current;
 
   return (
     <div className="flex h-6 items-center justify-between border-t border-terminal-border-bright bg-terminal-surface px-3 text-[11px] text-terminal-muted">
@@ -19,10 +20,18 @@ export function StatusBar() {
         <span>^Q quit</span>
         <span>^L clear</span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
         <span className="text-terminal-green">[AGENT]</span>
         <span className="text-terminal-green-dim">[{mode.toUpperCase()}]</span>
         {isOffline && <span className="text-terminal-warning">[OFFLINE]</span>}
+        {ws && (
+          <span
+            className={`max-w-[24vw] truncate ${workspace.sensitive ? "text-terminal-warning" : "text-terminal-green-dim"}`}
+            title={ws}
+          >
+            ws: {ws}
+          </span>
+        )}
         <span className="text-terminal-text">:: {model}</span>
         <span className="text-terminal-muted">:: {profile}</span>
         <span className="ml-2 text-terminal-green-dim">

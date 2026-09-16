@@ -20,12 +20,15 @@ No backend code lives here.
 | ----------------- | ------------------------------------------------- |
 | `npm install`     | Install dependencies                              |
 | `npm run dev`     | Vite dev server on `http://localhost:5173`        |
+| `npm run lint`    | ESLint (flat config, strict TS-aware rules)       |
 | `npm run build`   | `tsc -b && vite build` → static output in `dist/` |
+| `npm test`        | Vitest unit tests (jsdom)                         |
 | `npm run preview` | Serve the production build (default port 4173)    |
 
-There is **no lint or test framework** in this project. `npm run build` is the
-verification gate — it runs TypeScript in strict mode plus the Vite production
-build. Run it after any change.
+**Lint and test:** The CI workflow (`npm run lint` → `npm run build` → `npm test`)
+is the verification gate for every PR. Run all three locally after any change.
+Unit tests live alongside sources (`src/**/*.test.ts`) and mock `fetch`/`WebSocket`
+directly; `react-hooks/exhaustive-deps` and Fast-refresh rules are warnings.
 
 ### Prerequisites for local dev
 
@@ -40,6 +43,8 @@ but shows no live data.
 - **UI:** React ^18.3.1
 - **Build/dev:** Vite ^6.0.1 + `@vitejs/plugin-react` ^4.3.4
 - **Styling:** Tailwind CSS ^3.4.16 (PostCSS + Autoprefixer)
+- **Lint/Test:** ESLint ^10 (flat config) + eslint-plugin-react-hooks/react-refresh;
+  Vitest ^4 (jsdom) with @testing-library/react for hook tests
 - **Other deps:** `react-markdown` (rendering), `lucide-react` (icons)
 - **Package manager:** npm (lockfile v3). Node >= 18 required.
 - **No** state management library, router, test framework, or env vars — the app

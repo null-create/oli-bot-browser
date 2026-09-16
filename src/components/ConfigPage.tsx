@@ -248,16 +248,16 @@ export function ConfigPage() {
       setSaved(false);
       setSaveError(false);
       setDraft((d) => {
-        const next = { ...d };
+        const next: Record<string, unknown> = { ...d };
         const field = FIELDS.find((f) => f.key === key);
         if (field?.type === "number") {
-          (next as any)[key] = Number(raw) || 0;
+          next[key] = Number(raw) || 0;
         } else if (field?.type === "toggle") {
-          (next as any)[key] = Boolean(raw);
+          next[key] = Boolean(raw);
         } else {
-          (next as any)[key] = String(raw);
+          next[key] = String(raw);
         }
-        return next;
+        return next as OliConfig;
       });
     },
     [],
@@ -278,7 +278,7 @@ export function ConfigPage() {
         }
         headers = parsed;
       }
-    } catch (e) {
+    } catch {
       setSaveError(true);
       setSaved(false);
       return;

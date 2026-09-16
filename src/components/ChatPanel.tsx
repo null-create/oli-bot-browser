@@ -8,7 +8,6 @@ const TAGLINES = [
   "A terminal in your browser because reasons",
   "Green on black, the way god intended",
   "01 10 11 00",
-  "The tui you never asked for",
   "Your helpful AI agent",
   "Turing-approved, mostly",
   "99% helpful, 1% unhinged",
@@ -76,7 +75,7 @@ const TAGLINES = [
   "Nukin' the Fridge? I invented it",
   "Never seen Xanadu? Neither have I, and yet, here we are",
   "There's a suspicious amount of glitter here",
-  "The Zune of agent harnesses"
+  "The Zune of agent harnesses",
 ];
 
 export function ChatPanel() {

@@ -10,7 +10,7 @@ streaming (text, thinking, tool calls, sub-agents, token usage, todos).
 | View          | Purpose                                                                                                         |
 | ------------- | --------------------------------------------------------------------------------------------------------------- |
 | **chat**      | Streaming transcript (markdown), collapsible thinking blocks, live tool-call chips, slash-command autocomplete. |
-| **sessions**  | localStorage-backed session list — search, switch, rename, delete.                                              |
+| **sessions**  | server-backed session list — search, switch, rename, delete.                                                   |
 | **todos**     | Live `todowrite` list with status/priority breakdown.                                                           |
 | **subagents** | Per-run timeline of delegated sub-agents (activity, tool calls, messages).                                      |
 | **config**    | Editable runtime config (backend, models, API keys, agent flags).                                               |
@@ -69,14 +69,13 @@ src/
                 SubAgentView, TodoPanel
   context/      AppContext — global state + WebSocket event reducer
   hooks/        useOliSocket — auto-reconnecting WebSocket with send/clear
-  lib/          sessions — localStorage session CRUD
+  lib/          sessions — REST session client (list/create/get/rename/delete)
   types.ts      OliEvent union, domain types, COMMANDS, INITIAL_CONFIG
 ```
 
 ## Notes
 
-- Sessions persist to `localStorage` only; there is no server-side session
-  storage used by this UI.
+- Sessions persist server-side on `oli-bot` (shared with the TUI's `ConversationStore`); the browser creates a fresh session on load and per new-session, and each turn is sent with `session_id`. There is no localStorage; if the backend is unreachable the UI falls back to an ephemeral in-memory session.
 - Slash commands are handled client-side where they map to UI actions:
   `/clear`, `/config`, `/sessions`, `/todos`, `/subagents`, and `/help`. All
   other commands (`/model`, `/servers`, …) are sent to the agent as plain

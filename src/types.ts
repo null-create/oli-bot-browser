@@ -1,7 +1,13 @@
 export type OliEvent =
   | { type: "connected"; data: Record<string, never> }
-  | { type: "text_chunk"; data: { text: string; task_id?: string; agent_name?: string } }
-  | { type: "thinking"; data: { text: string; task_id?: string; agent_name?: string } }
+  | {
+      type: "text_chunk";
+      data: { text: string; task_id?: string; agent_name?: string };
+    }
+  | {
+      type: "thinking";
+      data: { text: string; task_id?: string; agent_name?: string };
+    }
   | {
       type: "tool_call_executing";
       data: {
@@ -13,7 +19,12 @@ export type OliEvent =
     }
   | {
       type: "tool_call_result";
-      data: { name: string; result: string; task_id?: string; agent_name?: string };
+      data: {
+        name: string;
+        result: string;
+        task_id?: string;
+        agent_name?: string;
+      };
     }
   | {
       type: "assistant_response";
@@ -30,6 +41,7 @@ export type OliEvent =
   | { type: "error"; data: { message: string } }
   | { type: "done"; data: { full_text: string } }
   | { type: "cleared"; data: Record<string, never> }
+  | { type: "session_created"; data: { session: SessionMeta } }
   | {
       type: "sub_agent_started";
       data: {
@@ -62,7 +74,13 @@ export type OliEvent =
       data: { todos: TodoItem[]; task_id?: string; agent_name?: string };
     };
 
-export type OliView = "chat" | "config" | "sessions" | "subagents" | "todos" | "mcp";
+export type OliView =
+  | "chat"
+  | "config"
+  | "sessions"
+  | "subagents"
+  | "todos"
+  | "mcp";
 
 export type MCPServerConfig = {
   name: string;
@@ -113,13 +131,30 @@ export type TodoItem = {
   priority: "high" | "medium" | "low";
 };
 
+export type SessionMeta = {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  server: string;
+  model: string;
+  profile: string;
+  total_tokens: number;
+  total_tokens_estimated: boolean;
+};
+
 export type Session = {
   id: string;
   name: string;
   messages: ChatMessage[];
-  createdAt: number;
-  serverUrl: string;
+  createdAt: string;
+  updatedAt?: string;
+  server?: string;
+  model?: string;
+  profile?: string;
   totalTokens?: number;
+  totalTokensEstimated?: boolean;
+  msgCount?: number;
 };
 
 export type OliConfig = {

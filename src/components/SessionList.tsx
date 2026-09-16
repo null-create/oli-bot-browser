@@ -121,8 +121,8 @@ export function SessionList() {
               </div>
             </div>
             <div className="mt-1 flex justify-between text-[11px] text-terminal-green-dim">
-              <span>{fmt(s.createdAt)}</span>
-              <span>{s.messages.length} messages</span>
+              <span>{fmt(new Date(s.createdAt ?? Date.now()).getTime())}</span>
+              <span>{s.msgCount ?? 0} messages</span>
             </div>
           </div>
         ))}

@@ -12,9 +12,10 @@ import { useOliSocket, WsStatus } from "../hooks/useOliSocket";
 import {
   createSession,
   deleteSession,
+  getSession,
   listSessions,
   renameSession,
-  saveSession,
+  sessionFromMeta,
 } from "../lib/sessions";
 import {
   MCPServerConfig,
@@ -95,16 +96,8 @@ function visibleLines(session?: Session): ChatLine[] {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<OliView>("chat");
-  const [sessions, setSessions] = useState<Session[]>(() => {
-    const existing = listSessions();
-    if (existing.length > 0) return existing;
-    const fresh = createSession();
-    saveSession(fresh);
-    return [fresh];
-  });
-  const [currentSessionId, setCurrentSessionId] = useState<string>(
-    sessions[0]?.id ?? "",
-  );
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string>("");
   const currentSessionIdRef = useRef<string>(currentSessionId);
   currentSessionIdRef.current = currentSessionId;
   const [messages, setMessages] = useState<ChatLine[]>([]);
@@ -297,9 +290,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const sid = currentSessionIdRef.current;
           setSessions((prev) =>
             prev.map((s) =>
-              s.id === sid ? { ...s, messages: [...s.messages, line] } : s,
+              s.id === sid
+                ? {
+                    ...s,
+                    messages: [...s.messages, line],
+                    msgCount: (s.msgCount ?? 0) + 1,
+                    updatedAt: new Date().toISOString(),
+                  }
+                : s,
             ),
           );
+          listSessions()
+            .then(setSessions)
+            .catch(() => {});
         }
         pendingTextRef.current = "";
         setPendingText("");
@@ -310,6 +313,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIsGenerating(false);
         return;
       }
+      case "session_created": {
+        const session = sessionFromMeta(ev.data.session);
+        setCurrentSessionId(session.id);
+        setSessions((prev) =>
+          prev.some((s) => s.id === session.id)
+            ? prev.map((s) => (s.id === session.id ? session : s))
+            : [session, ...prev],
+        );
+        return;
+      }
       case "cleared": {
         setMessages([]);
         pendingTextRef.current = "";
@@ -317,6 +330,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setPendingThinking("");
         setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
         setIsGenerating(false);
+        const sid = currentSessionIdRef.current;
+        setSessions((prev) =>
+          prev.map((s) =>
+            s.id === sid ? { ...s, messages: [], msgCount: 0 } : s,
+          ),
+        );
+        listSessions()
+          .then(setSessions)
+          .catch(() => {});
         return;
       }
       case "connected":
@@ -387,27 +409,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
         timestamp: now(),
       };
       setMessages((m) => [...m, userMsg]);
+      const sid = currentSessionId;
+      let autoName = "";
       setSessions((prev) =>
-        prev.map((s) =>
-          s.id === currentSessionId
-            ? {
-                ...s,
-                name:
-                  s.messages.length === 0
-                    ? text.length > 40
-                      ? text.slice(0, 40) + "\u2026"
-                      : text
-                    : s.name,
-                messages: [...s.messages, userMsg],
-              }
-            : s,
-        ),
+        prev.map((s) => {
+          if (s.id !== sid) return s;
+          if ((s.msgCount ?? 0) === 0 && /^(untitled)?\s*$/i.test(s.name))
+            autoName = text.length > 40 ? text.slice(0, 40) + "\u2026" : text;
+          return {
+            ...s,
+            name: autoName || s.name,
+            messages: [...s.messages, userMsg],
+            msgCount: (s.msgCount ?? 0) + 1,
+            updatedAt: new Date().toISOString(),
+          };
+        }),
       );
+      if (autoName)
+        renameSession(sid, autoName).catch((e) =>
+          console.error("Failed to auto-name session", e),
+        );
       pendingTextRef.current = "";
       setPendingText("");
       setPendingThinking("");
       setIsGenerating(true);
-      send({ content: text });
+      send({ content: text, session_id: sid });
     },
     [isGenerating, send, currentSessionId],
   );
@@ -421,7 +447,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSessions((prev) =>
       prev.map((s) => (s.id === currentSessionId ? { ...s, messages: [] } : s)),
     );
-    clear();
+    clear(currentSessionId);
   }, [clear, currentSessionId]);
 
   const runCommand = useCallback(
@@ -476,53 +502,78 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [clearChat],
   );
 
-  const newSession = useCallback(() => {
-    const fresh = createSession();
-    saveSession(fresh);
-    setSessions((prev) => [fresh, ...prev]);
-    setCurrentSessionId(fresh.id);
+  const newSession = useCallback(async () => {
+    try {
+      const fresh = await createSession();
+      setSessions((prev) => [fresh, ...prev]);
+      setCurrentSessionId(fresh.id);
+      setMessages([]);
+      pendingTextRef.current = "";
+      setPendingText("");
+      setPendingThinking("");
+      setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
+    } catch (e) {
+      console.error("Failed to create session", e);
+    }
+  }, []);
+
+  const switchSession = useCallback(async (id: string) => {
+    setCurrentSessionId(id);
     setMessages([]);
     pendingTextRef.current = "";
     setPendingText("");
     setPendingThinking("");
     setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
-    clear();
-  }, [clear]);
-
-  const switchSession = useCallback(
-    (id: string) => {
-      setCurrentSessionId(id);
-      const s = listSessions().find((x) => x.id === id);
+    try {
+      const s = await getSession(id);
       setMessages(visibleLines(s));
-      pendingTextRef.current = "";
-      setPendingText("");
-      setPendingThinking("");
-      setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
-      clear();
-    },
-    [clear],
-  );
+    } catch (e) {
+      console.error("Failed to load session", e);
+    }
+  }, []);
 
   const removeSession = useCallback(
-    (id: string) => {
-      deleteSession(id);
-      const remaining = listSessions();
-      setSessions(remaining);
+    async (id: string) => {
+      try {
+        await deleteSession(id);
+      } catch (e) {
+        console.error("Failed to delete session", e);
+        return;
+      }
+      let remaining = sessions.filter((x) => x.id !== id);
+      if (remaining.length < sessions.length) setSessions(remaining);
       if (id === currentSessionId) {
-        const next = remaining[0] ?? createSession();
-        if (remaining.length === 0) saveSession(next);
+        let next: Session | null = remaining[0] ?? null;
+        if (!next) {
+          try {
+            next = await createSession();
+            setSessions([next]);
+            remaining = [next];
+          } catch (e) {
+            console.error("Failed to create session", e);
+            return;
+          }
+        }
         setCurrentSessionId(next.id);
         setMessages(visibleLines(next));
-        clear();
       }
     },
-    [currentSessionId, clear],
+    [currentSessionId, sessions],
   );
 
   const renameCurrentSession = useCallback(
     (name: string) => {
-      renameSession(currentSessionId, name);
-      setSessions(listSessions());
+      const sid = currentSessionId;
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === sid && name.trim() ? { ...s, name: name.trim() } : s,
+        ),
+      );
+      if (name.trim()) {
+        renameSession(sid, name.trim()).catch((e) =>
+          console.error("Failed to rename session", e),
+        );
+      }
     },
     [currentSessionId],
   );
@@ -627,6 +678,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchMcpServers();
   }, [fetchMcpServers]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let list: Session[] = [];
+      try {
+        list = await listSessions();
+      } catch (e) {
+        console.error("Failed to list sessions", e);
+      }
+      if (cancelled) return;
+      setSessions(list);
+      try {
+        const fresh = await createSession();
+        if (cancelled) return;
+        setSessions((prev) => [fresh, ...prev]);
+        setCurrentSessionId(fresh.id);
+      } catch (e) {
+        console.error("Failed to create session", e);
+        const ephemeral: Session = {
+          id: `local-${Date.now().toString(36)}`,
+          name: "untitled",
+          messages: [],
+          createdAt: new Date().toISOString(),
+        };
+        setSessions((prev) => (prev.length ? prev : [ephemeral]));
+        setCurrentSessionId((prev) => prev || ephemeral.id);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const resetUsage = useCallback(
     () =>
       setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false }),
@@ -694,14 +778,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       switchSession,
       removeSession,
       renameCurrentSession,
-fetchConfig,
+      fetchConfig,
       saveConfig,
       fetchMcpServers,
       addMcpServer,
       updateMcpServer,
       removeMcpServer,
       resetUsage,
-    ]
+    ],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

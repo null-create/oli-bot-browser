@@ -1,5 +1,12 @@
 import { useApp } from "../context/AppContext";
-import { MessageSquare, Settings, ListTodo, Network, Plug, Plus } from "lucide-react";
+import {
+  MessageSquare,
+  Settings,
+  ListTodo,
+  Network,
+  Plug,
+  Plus,
+} from "lucide-react";
 import { OliView } from "../types";
 
 const NAV: { view: OliView; label: string; icon: typeof MessageSquare }[] = [
@@ -57,7 +64,7 @@ export function Sidebar() {
               {s.name || "untitled"}
             </span>
             <span className="text-[10px] text-terminal-green-dim">
-              {s.messages.filter((m) => m.role === "assistant").length} msg
+              {s.msgCount ?? 0} msg
             </span>
             <button
               className="ml-1 hidden text-terminal-error group-hover:block"

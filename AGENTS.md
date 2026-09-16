@@ -58,7 +58,7 @@ src/
                          SessionList, ConfigPage, MCPPage, SubAgentView, TodoPanel
   context/AppContext.tsx Global state + WebSocket event reducer
   hooks/useOliSocket.ts  Auto-reconnecting WebSocket with send/clear helpers
-  lib/sessions.ts        localStorage session CRUD
+  lib/sessions.ts        REST session client (list/create/get/rename/delete)
 ```
 
 ## Core architecture rules
@@ -77,9 +77,12 @@ src/
   with fallback to `localhost:9734`. It auto-reconnects with exponential backoff
   (1s → 15s cap). Client sends `{"content": "..."}` for a turn or
   `{"action": "clear"}` to reset server-side history.
-- **Persistence:** Sessions persist to browser `localStorage` only (key
-  `oli_sessions`, see `src/lib/sessions.ts`). There is no server-side session
-  storage used by this UI.
+**Persistence:** Sessions persist server-side on `oli-server`. The browser
+  creates a fresh session on load and per new-session, via REST
+  `GET /v1/sessions` / `POST /v1/sessions` (see `src/lib/sessions.ts`); each turn
+  is sent with `session_id` and the backend persists it. There is no
+  localStorage. If the backend is unreachable, the UI falls back to an
+  ephemeral in-memory session.
 - **Config:** The Config view edits an in-memory React state object seeded from
   `INITIAL_CONFIG` in `src/types.ts`; it round-trips to the server over
   `GET/PUT /v1/config`. MCP server config is a separate list (`src/types.ts`

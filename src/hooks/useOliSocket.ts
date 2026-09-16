@@ -75,7 +75,15 @@ export function useOliSocket(onEvent: (ev: OliEvent) => void) {
     }
   }, []);
 
-  const clear = useCallback(() => send({ action: "clear" }), [send]);
+  const clear = useCallback(
+    (sessionId?: string) =>
+      send(
+        sessionId
+          ? { action: "clear", session_id: sessionId }
+          : { action: "clear" },
+      ),
+    [send],
+  );
 
   return { status, send, clear };
 }

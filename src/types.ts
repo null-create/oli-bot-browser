@@ -101,17 +101,13 @@ export type ChatMessage = {
   agentName?: string;
 };
 
-export type PendingToolCall = {
+export type ToolCall = {
+  id: string;
   name: string;
   parameters: Record<string, unknown>;
   startTime: number;
-  task_id?: string;
-  agent_name?: string;
-};
-
-export type FinishedToolCall = PendingToolCall & {
-  result: string;
-  elapsed: number;
+  result?: string;
+  elapsed?: number;
 };
 
 export type SubAgentRun = {
@@ -122,7 +118,7 @@ export type SubAgentRun = {
   status: "running" | "done" | "error";
   activity: string;
   messages: ChatMessage[];
-  toolCalls: FinishedToolCall[];
+  toolCalls: ToolCall[];
   todos?: TodoItem[];
 };
 

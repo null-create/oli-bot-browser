@@ -9,6 +9,7 @@ import {
   XCircle,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { ToolCallDisplay } from "./ToolCallDisplay";
 
 function StatusIcon({ status }: { status: SubAgentRun["status"] }) {
   if (status === "running")
@@ -43,15 +44,11 @@ function RunCard({ run }: { run: SubAgentRun }) {
               <div className="mb-1 text-[11px] font-bold text-terminal-green-dim">
                 tool calls
               </div>
-              {run.toolCalls.map((tc, i) => (
-                <div
-                  key={i}
-                  className="ml-2 mb-1 text-[11px] text-terminal-muted"
-                >
-                  <span className="text-terminal-text">{tc.name}</span>
-                  {"\u00b7"} {tc.elapsed.toFixed(1)}s
-                </div>
-              ))}
+              <div className="max-h-48 space-y-1 overflow-y-auto">
+                {run.toolCalls.map((tc) => (
+                  <ToolCallDisplay key={tc.id} call={tc} />
+                ))}
+              </div>
             </div>
           )}
           {run.messages.length > 0 && (

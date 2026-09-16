@@ -85,7 +85,7 @@ export function ChatPanel() {
     pendingThinking,
     thinkingOpen,
     collapseThinking,
-    activeToolCalls,
+    toolCalls,
     isGenerating,
   } = useApp();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -93,7 +93,7 @@ export function ChatPanel() {
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, pendingText, pendingThinking]);
+  }, [messages, pendingText, pendingThinking, toolCalls]);
 
   const tagline = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
 
@@ -123,8 +123,8 @@ export function ChatPanel() {
         />
       )}
 
-      {[...activeToolCalls.entries()].map(([start, name]) => (
-        <ToolCallDisplay key={start} name={name} startedAt={start} />
+      {toolCalls.map((call) => (
+        <ToolCallDisplay key={call.id} call={call} />
       ))}
 
       {pendingText && (

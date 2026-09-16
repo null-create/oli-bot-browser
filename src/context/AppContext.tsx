@@ -30,6 +30,7 @@ import {
   Session,
   SubAgentRun,
   TodoItem,
+  ToolCall,
   WorkspaceState,
   INITIAL_CONFIG,
 } from "../types";
@@ -49,7 +50,7 @@ type AppState = {
   pendingThinking: string;
   thinkingOpen: boolean;
   isGenerating: boolean;
-  activeToolCalls: Map<number, string>;
+  toolCalls: ToolCall[];
   sessions: Session[];
   currentSessionId: string;
   subAgents: SubAgentRun[];
@@ -115,9 +116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [pendingThinking, setPendingThinking] = useState("");
   const [thinkingOpen, setThinkingOpen] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeToolCalls, setActiveToolCalls] = useState<Map<number, string>>(
-    new Map(),
-  );
+  const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
   const [subAgents, setSubAgents] = useState<SubAgentRun[]>([]);
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [mcpServers, setMcpServers] = useState<MCPServerConfig[]>([]);
@@ -130,8 +129,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<OliConfig>(INITIAL_CONFIG);
 
   const pendingTextRef = useRef("");
-  const pendingToolStart = useRef<number>(0);
-  const activeToolQueue = useRef<number[]>([]);
+  const activeToolIds = useRef<string[]>([]);
 
   const handleEvent = useCallback((ev: OliEvent) => {
     switch (ev.type) {
@@ -185,45 +183,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       case "tool_call_executing": {
         if (ev.data.task_id) {
           const taskId = ev.data.task_id!;
-          const name = ev.data.name;
-          setSubAgents((prev) =>
-            prev.map((r) =>
-              r.task_id === taskId ? { ...r, activity: `calling ${name}` } : r,
-            ),
-          );
-          return;
-        }
-        setIsGenerating(true);
-        pendingToolStart.current = now();
-        {
-          const startedAt = pendingToolStart.current;
-          activeToolQueue.current.push(startedAt);
-          setActiveToolCalls((prev) => {
-            const next = new Map(prev);
-            next.set(startedAt, ev.data.name);
-            return next;
-          });
-        }
-        return;
-      }
-      case "tool_call_result": {
-        if (ev.data.task_id) {
-          const taskId = ev.data.task_id!;
-          const name = ev.data.name;
           setSubAgents((prev) =>
             prev.map((r) =>
               r.task_id === taskId
                 ? {
                     ...r,
-                    activity: `tool result: ${name}`,
+                    activity: `calling ${ev.data.name}`,
                     toolCalls: [
                       ...r.toolCalls,
                       {
-                        name,
-                        parameters: {},
-                        startTime: 0,
-                        result: ev.data.result,
-                        elapsed: 0,
+                        id: makeId(),
+                        name: ev.data.name,
+                        parameters: ev.data.parameters,
+                        startTime: now(),
                       },
                     ],
                   }
@@ -232,15 +204,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
           );
           return;
         }
+        setIsGenerating(true);
         {
-          const startedAt = activeToolQueue.current.shift();
-          if (startedAt !== undefined) {
-            setActiveToolCalls((prev) => {
-              if (!prev.has(startedAt)) return prev;
-              const next = new Map(prev);
-              next.delete(startedAt);
-              return next;
-            });
+          const call: ToolCall = {
+            id: makeId(),
+            name: ev.data.name,
+            parameters: ev.data.parameters,
+            startTime: now(),
+          };
+          activeToolIds.current.push(call.id);
+          setToolCalls((prev) => [...prev, call]);
+        }
+        return;
+      }
+      case "tool_call_result": {
+        if (ev.data.task_id) {
+          const taskId = ev.data.task_id!;
+          const name = ev.data.name;
+          setSubAgents((prev) =>
+            prev.map((r) => {
+              if (r.task_id !== taskId) return r;
+              const finishedAt = now();
+              let patched = false;
+              const toolCalls = r.toolCalls.map((c) => {
+                if (patched || c.result !== undefined) return c;
+                patched = true;
+                return {
+                  ...c,
+                  result: ev.data.result,
+                  elapsed: (finishedAt - c.startTime) / 1000,
+                };
+              });
+              return { ...r, activity: `tool result: ${name}`, toolCalls };
+            }),
+          );
+          return;
+        }
+        {
+          const id = activeToolIds.current.shift();
+          if (id !== undefined) {
+            const finishedAt = now();
+            setToolCalls((prev) =>
+              prev.map((c) =>
+                c.id === id
+                  ? {
+                      ...c,
+                      result: ev.data.result,
+                      elapsed: (finishedAt - c.startTime) / 1000,
+                    }
+                  : c,
+              ),
+            );
           }
         }
         return;
@@ -319,8 +333,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setPendingText("");
         setPendingThinking("");
         setThinkingOpen(true);
-        activeToolQueue.current = [];
-        setActiveToolCalls(new Map());
+        activeToolIds.current = [];
+        setToolCalls((prev) => prev.filter((c) => c.result !== undefined));
         setIsGenerating(false);
         return;
       }
@@ -341,6 +355,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setPendingThinking("");
         setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
         setIsGenerating(false);
+        activeToolIds.current = [];
+        setToolCalls([]);
         const sid = currentSessionIdRef.current;
         setSessions((prev) =>
           prev.map((s) =>
@@ -455,6 +471,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPendingText("");
     setPendingThinking("");
     setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
+    activeToolIds.current = [];
+    setToolCalls([]);
     setSessions((prev) =>
       prev.map((s) => (s.id === currentSessionId ? { ...s, messages: [] } : s)),
     );
@@ -528,6 +546,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPendingText("");
       setPendingThinking("");
       setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
+      activeToolIds.current = [];
+      setToolCalls([]);
     } catch (e) {
       console.error("Failed to create session", e);
     }
@@ -540,6 +560,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPendingText("");
     setPendingThinking("");
     setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
+    activeToolIds.current = [];
+    setToolCalls([]);
     try {
       const s = await getSession(id);
       setMessages(visibleLines(s));
@@ -772,7 +794,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       pendingThinking,
       thinkingOpen,
       isGenerating,
-      activeToolCalls,
+      toolCalls,
       sessions,
       currentSessionId,
       subAgents,
@@ -809,7 +831,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       pendingThinking,
       thinkingOpen,
       isGenerating,
-      activeToolCalls,
+      toolCalls,
       sessions,
       currentSessionId,
       subAgents,

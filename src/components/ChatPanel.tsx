@@ -8,7 +8,6 @@ const TAGLINES = [
   "A terminal in your browser because reasons",
   "Green on black, the way god intended",
   "01 10 11 00",
-  "The tui you never asked for",
   "Your helpful AI agent",
   "Turing-approved, mostly",
   "99% helpful, 1% unhinged",
@@ -53,11 +52,11 @@ const TAGLINES = [
   "I am immense, and I eclipse",
   "Big brain time (results may vary)",
   "Deploy first, ask questions later (please don't)",
-  "POV: you opened a terminal and found a friend",
+  "POV: you opened the browser and found a friend",
   "Achievement unlocked: opened the app",
   "85% fat free!",
   "I'm back, baby!",
-  "The terminal app",
+  "The browser app",
   "The risk may be calculated, but man, am I bad at math",
   "Q: What is the meaning of life? A: 42, but also, please don't ask me to explain it",
   "Forget the singularity, I'm just trying to find my keys",
@@ -76,6 +75,7 @@ const TAGLINES = [
   "Nukin' the Fridge? I invented it",
   "Never seen Xanadu? Neither have I, and yet, here we are",
   "There's a suspicious amount of glitter here",
+  "The Zune of agent harnesses",
 ];
 
 export function ChatPanel() {

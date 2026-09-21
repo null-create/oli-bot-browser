@@ -279,7 +279,7 @@ export function WorkspacePage() {
         </div>
       )}
 
-      <div className="mb-3 flex items-center gap-1">
+      <div className="mb-3 flex flex-wrap items-center gap-1">
         <button
           onClick={() => goTo(ROOT)}
           className="flex items-center gap-1 border border-terminal-border px-2 py-1 text-xs text-terminal-muted hover:bg-terminal-panel hover:text-terminal-text"
@@ -343,7 +343,7 @@ export function WorkspacePage() {
 
       {confirming && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-terminal-bg/90">
-          <div className="w-96 border border-terminal-warning bg-terminal-surface p-4">
+          <div className="w-[min(24rem,calc(100%-1rem))] border border-terminal-warning bg-terminal-surface p-4">
             <h3 className="mb-2 text-sm font-bold text-terminal-warning">
               sensitive path
             </h3>

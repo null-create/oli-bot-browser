@@ -16,7 +16,7 @@ export function StatusBar() {
 
   return (
     <div className="flex h-6 items-center justify-between border-t border-terminal-border-bright bg-terminal-surface px-3 text-[11px] text-terminal-muted">
-      <div className="flex gap-2">
+      <div className="hidden gap-2 md:flex">
         <span>^Q quit</span>
         <span>^L clear</span>
       </div>
@@ -26,14 +26,16 @@ export function StatusBar() {
         {isOffline && <span className="text-terminal-warning">[OFFLINE]</span>}
         {ws && (
           <span
-            className={`max-w-[24vw] truncate ${workspace.sensitive ? "text-terminal-warning" : "text-terminal-green-dim"}`}
+            className={`hidden truncate sm:inline ${workspace.sensitive ? "text-terminal-warning" : "text-terminal-green-dim"}`}
             title={ws}
           >
             ws: {ws}
           </span>
         )}
-        <span className="text-terminal-text">:: {model}</span>
-        <span className="text-terminal-muted">:: {profile}</span>
+        <span className="hidden text-terminal-text md:inline">:: {model}</span>
+        <span className="hidden text-terminal-muted lg:inline">
+          :: {profile}
+        </span>
         <span className="ml-2 text-terminal-green-dim">
           {estimatedPrefix}
           {tokens} tok

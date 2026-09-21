@@ -334,8 +334,11 @@ export function ConfigPage() {
             </h3>
             <div className="space-y-2">
               {fields.map((field) => (
-                <div key={field.key} className="flex items-center gap-3">
-                  <label className="w-44 shrink-0 text-xs text-terminal-muted">
+                <div
+                  key={field.key}
+                  className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3"
+                >
+                  <label className="w-full shrink-0 text-xs text-terminal-muted sm:w-44">
                     {field.label}
                   </label>
                   {field.type === "toggle" ? (
@@ -358,7 +361,7 @@ export function ConfigPage() {
                         setHeadersText(e.target.value);
                       }}
                       rows={3}
-                      className="flex-1 resize-y border border-terminal-border bg-terminal-surface px-2 py-1 font-mono text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
+                      className="w-full sm:flex-1 resize-y border border-terminal-border bg-terminal-surface px-2 py-1 font-mono text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
                     />
                   ) : field.key === "openai_api_key" ||
                     field.key === "huggingface_api_key" ? (
@@ -366,14 +369,14 @@ export function ConfigPage() {
                       type="password"
                       value={String(draft[field.key])}
                       onChange={(e) => handleChange(field.key, e.target.value)}
-                      className="flex-1 border border-terminal-border bg-terminal-surface px-2 py-1 text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
+                      className="w-full sm:flex-1 border border-terminal-border bg-terminal-surface px-2 py-1 text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
                     />
                   ) : (
                     <input
                       type={field.type === "number" ? "number" : "text"}
                       value={String(draft[field.key])}
                       onChange={(e) => handleChange(field.key, e.target.value)}
-                      className="flex-1 border border-terminal-border bg-terminal-surface px-2 py-1 text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
+                      className="w-full sm:flex-1 border border-terminal-border bg-terminal-surface px-2 py-1 text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
                     />
                   )}
                 </div>

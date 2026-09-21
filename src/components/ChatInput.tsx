@@ -25,6 +25,12 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
   }, [value]);
 
   useEffect(() => {
+    if (window.matchMedia("(pointer: fine)").matches) {
+      inputRef.current?.focus();
+    }
+  }, []);
+
+  useEffect(() => {
     if (!showSuggestions) return;
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -129,7 +135,6 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
           className="flex-1 resize-none border-none bg-transparent text-sm text-terminal-text placeholder:text-terminal-green-dim focus:outline-none focus:ring-0"
           placeholder={isGenerating ? "generating..." : "type a message..."}
           disabled={isGenerating}
-          autoFocus
         />
         {value.trim() && (
           <button

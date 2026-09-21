@@ -21,25 +21,27 @@ export function ToolCallDisplay({ call }: { call: ToolCall }) {
   const params = formatToolParams(call.parameters);
 
   return (
-    <div className="my-1 flex items-center gap-2 border border-terminal-border bg-terminal-surface px-2 py-1 text-xs">
+    <div className="my-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 border border-terminal-border bg-terminal-surface px-2 py-1 text-xs">
       {call.result !== undefined ? (
         isError ? (
-          <XCircle size={12} className="text-terminal-error" />
+          <XCircle size={12} className="shrink-0 text-terminal-error" />
         ) : (
-          <CheckCircle2 size={12} className="text-terminal-green" />
+          <CheckCircle2 size={12} className="shrink-0 text-terminal-green" />
         )
       ) : (
-        <Loader2 size={12} className="animate-spin text-terminal-green" />
+        <Loader2 size={12} className="shrink-0 animate-spin text-terminal-green" />
       )}
-      <span className="font-bold text-terminal-text">{call.name}</span>
+      <span className="shrink-0 font-bold text-terminal-text">{call.name}</span>
       {params && (
-        <span className="text-terminal-muted">{"\u00b7"} {params}</span>
+        <span className="min-w-0 flex-1 truncate text-terminal-muted">
+          {"\u00b7"} {params}
+        </span>
       )}
-      <span className="text-terminal-green-dim">
+      <span className="shrink-0 text-terminal-green-dim">
         {"\u00b7"} {elapsed.toFixed(1)}s
       </span>
       {call.result !== undefined && isError && (
-        <span className="min-w-0 flex-1 truncate font-semibold text-terminal-error">
+        <span className="min-w-0 w-full basis-full truncate font-semibold text-terminal-error">
           {call.result}
         </span>
       )}

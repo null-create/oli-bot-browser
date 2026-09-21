@@ -151,7 +151,7 @@ export function MCPPage() {
         </span>
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
         <div className="min-w-0 flex-1 overflow-y-auto">
           {mcpServers.length === 0 ? (
             <div className="flex h-full items-center justify-center text-sm text-terminal-muted">
@@ -209,7 +209,7 @@ export function MCPPage() {
         </div>
 
         {(adding || editing !== null) && (
-          <div className="w-80 shrink-0 border border-terminal-border bg-terminal-surface p-3">
+          <div className="w-full shrink-0 border border-terminal-border bg-terminal-surface p-3 lg:w-80">
             <h3 className="mb-3 text-xs font-bold text-terminal-green">
               {editing ? `edit: ${editing}` : "add server"}
             </h3>

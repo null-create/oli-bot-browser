@@ -20,7 +20,7 @@ const NAV: { view: OliView; label: string; icon: typeof MessageSquare }[] = [
   { view: "config", label: "config", icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const {
     view,
     setView,
@@ -36,7 +36,10 @@ export function Sidebar() {
       <div className="flex h-8 items-center justify-between border-b border-terminal-border px-2 text-xs text-terminal-muted">
         <span className="font-bold text-terminal-green">sessions</span>
         <button
-          onClick={newSession}
+          onClick={() => {
+            newSession();
+            onNavigate?.();
+          }}
           className="flex items-center gap-1 text-terminal-green hover:text-terminal-green-bright"
           title="New session"
         >
@@ -59,6 +62,7 @@ export function Sidebar() {
             onClick={() => {
               if (s.id !== currentSessionId) switchSession(s.id);
               setView("chat");
+              onNavigate?.();
             }}
           >
             <span className="truncate flex-1">
@@ -69,7 +73,7 @@ export function Sidebar() {
               {s.msgCount ?? 0} msg
             </span>
             <button
-              className="ml-1 hidden text-terminal-error group-hover:block"
+              className="ml-1 text-terminal-error sm:hidden sm:group-hover:block"
               title="Delete session"
               onClick={(e) => {
                 e.stopPropagation();
@@ -86,7 +90,10 @@ export function Sidebar() {
         {NAV.map(({ view: v, label, icon: Icon }) => (
           <button
             key={v}
-            onClick={() => setView(v)}
+            onClick={() => {
+              setView(v);
+              onNavigate?.();
+            }}
             className={`flex w-full items-center gap-2 border-b border-terminal-border px-3 py-2 text-xs ${
               view === v
                 ? "bg-terminal-panel text-terminal-green"

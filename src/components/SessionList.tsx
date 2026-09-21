@@ -97,7 +97,7 @@ export function SessionList() {
                   {s.name || "untitled"}
                 </span>
               )}
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+              <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

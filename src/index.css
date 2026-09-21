@@ -56,3 +56,15 @@ input:focus {
   padding-left: 1.25rem;
   margin-bottom: 0.5rem;
 }
+.markdown-body {
+  overflow-wrap: break-word;
+}
+.markdown-body pre {
+  max-width: 100%;
+}
+@media (max-width: 640px) {
+  input,
+  textarea {
+    font-size: 16px;
+  }
+}

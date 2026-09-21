@@ -1,25 +1,17 @@
 # Convenience commands for local development and testing of the agent
-PHONY: init clean test run build restart rebuild stop
+PHONY: init clean test run stop restart build rebuild
 
 init:
-	@echo "Initializing backend..."
-	@python3 -m venv venv
-	@./venv/bin/pip install --upgrade pip
-	@./venv/bin/pip install -e .
-
-init-dev:
-	@echo "Initializing backend for development..."
-	@python3 -m venv venv
-	@./venv/bin/pip install --upgrade pip
-	@./venv/bin/pip install -e .[dev]
+	@echo "Initializing project for development..."
+	@npm install
 
 clean:
 	@echo "Cleaning up..."
-	@rm -rf ./venv
+	@rm -rf ./dist ./node_modules
 
 test:
 	@echo "Running tests..."
-	@pytest -v tests/
+	@npm run test
 
 run:
 	@echo "Running agent in container with API server..."

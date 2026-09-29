@@ -324,6 +324,9 @@ export function ConfigPage() {
 
       <div className="mb-3 border border-terminal-border bg-terminal-surface px-3 py-2 text-xs text-terminal-muted">
         changes are saved to the server and require a restart to take effect.
+        the active agent profile is not set here — click the{" "}
+        <span className="text-terminal-text">:: &lt;profile&gt;</span> chip in the
+        status bar to switch it live.
       </div>
 
       <div className="flex-1 overflow-y-auto">

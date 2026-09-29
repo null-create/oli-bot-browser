@@ -95,19 +95,19 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
   };
 
   return (
-    <div className="relative border-t border-terminal-border bg-terminal-surface">
+    <div className="relative border-t border-oli-line bg-oli-surface">
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute bottom-full left-0 z-50 max-h-48 w-full overflow-y-auto border border-terminal-border-bright bg-terminal-panel shadow-lg"
+          className="absolute bottom-full left-0 z-50 max-h-48 w-full overflow-y-auto border border-oli-line-strong bg-oli-elevated shadow-lg"
         >
           {suggestions.map((cmd, i) => (
             <div
               key={cmd}
               className={`cursor-pointer px-3 py-1.5 text-xs ${
                 i === selectedIdx
-                  ? "bg-terminal-panel-selected text-terminal-green"
-                  : "text-terminal-muted hover:bg-terminal-panel hover:text-terminal-text"
+                  ? "bg-oli-selected text-oli-accent"
+                  : "text-oli-muted hover:bg-oli-elevated hover:text-oli-fg"
               }`}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -116,14 +116,14 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
                 inputRef.current?.focus();
               }}
             >
-              <span className="font-bold text-terminal-green">{cmd}</span>
+              <span className="font-bold text-oli-accent">{cmd}</span>
             </div>
           ))}
         </div>
       )}
 
       <div className="flex items-end gap-2 px-2 py-1">
-        <span className="mb-1.5 text-terminal-green text-sm select-none">
+        <span className="mb-1.5 text-oli-accent text-sm select-none">
           {">"}
         </span>
         <textarea
@@ -132,7 +132,7 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
-          className="flex-1 resize-none border-none bg-transparent text-sm text-terminal-text placeholder:text-terminal-green-dim focus:outline-none focus:ring-0"
+          className="flex-1 resize-none border-none bg-transparent text-sm text-oli-fg placeholder:text-oli-accent-dim focus:outline-none focus:ring-0"
           placeholder={isGenerating ? "generating..." : "type a message..."}
           disabled={isGenerating}
         />
@@ -140,7 +140,7 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
           <button
             onClick={submit}
             disabled={isGenerating}
-            className="mb-1 text-terminal-green hover:text-terminal-green-bright disabled:text-terminal-muted"
+            className="mb-1 text-oli-accent hover:text-oli-accent-bright disabled:text-oli-muted"
             title="Send"
           >
             <SendHorizonal size={16} />
@@ -149,7 +149,7 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
         {!value.trim() && (
           <button
             onClick={onClear}
-            className="mb-1 text-terminal-muted hover:text-terminal-error"
+            className="mb-1 text-oli-muted hover:text-oli-danger"
             title="Clear"
           >
             <Trash2 size={16} />

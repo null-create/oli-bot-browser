@@ -13,42 +13,42 @@ import {
 function StatusIcon({ status }: { status: TodoItem["status"] }) {
   switch (status) {
     case "pending":
-      return <Circle size={12} className="text-terminal-muted" />;
+      return <Circle size={12} className="text-oli-muted" />;
     case "in_progress":
       return (
         <CircleDot
           size={12}
-          className="text-terminal-green animate-pulse-green"
+          className="text-oli-accent animate-pulse-accent"
         />
       );
     case "completed":
-      return <CheckCircle2 size={12} className="text-terminal-green" />;
+      return <CheckCircle2 size={12} className="text-oli-accent" />;
     case "cancelled":
-      return <XCircle size={12} className="text-terminal-error" />;
+      return <XCircle size={12} className="text-oli-danger" />;
   }
 }
 
 function PriorityIcon({ priority }: { priority: TodoItem["priority"] }) {
   switch (priority) {
     case "high":
-      return <ArrowUp size={12} className="text-terminal-error" />;
+      return <ArrowUp size={12} className="text-oli-danger" />;
     case "medium":
-      return <ArrowRight size={12} className="text-terminal-warning" />;
+      return <ArrowRight size={12} className="text-oli-warn" />;
     case "low":
-      return <ArrowDown size={12} className="text-terminal-muted" />;
+      return <ArrowDown size={12} className="text-oli-muted" />;
   }
 }
 
 function StatusColor(status: TodoItem["status"]): string {
   switch (status) {
     case "completed":
-      return "text-terminal-green-dim line-through";
+      return "text-oli-accent-dim line-through";
     case "cancelled":
-      return "text-terminal-muted line-through";
+      return "text-oli-muted line-through";
     case "in_progress":
-      return "text-terminal-green-bright";
+      return "text-oli-accent-bright";
     default:
-      return "text-terminal-text";
+      return "text-oli-fg";
   }
 }
 
@@ -57,7 +57,7 @@ export function TodoPanel() {
 
   if (todos.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center bg-terminal-bg text-sm text-terminal-muted">
+      <div className="flex h-full items-center justify-center bg-oli-bg text-sm text-oli-muted">
         no to-do items
       </div>
     );
@@ -78,13 +78,13 @@ export function TodoPanel() {
   });
 
   return (
-    <div className="flex h-full flex-col bg-terminal-bg p-4">
-      <h2 className="mb-3 text-sm font-bold text-terminal-green">todos</h2>
+    <div className="flex h-full flex-col bg-oli-bg p-4">
+      <h2 className="mb-3 text-sm font-bold text-oli-accent">todos</h2>
       <div className="flex-1 overflow-y-auto">
         {sorted.map((t, i) => (
           <div
             key={i}
-            className="flex items-start gap-2 border-b border-terminal-border px-1 py-2"
+            className="flex items-start gap-2 border-b border-oli-line px-1 py-2"
           >
             <StatusIcon status={t.status} />
             <PriorityIcon priority={t.priority} />
@@ -94,7 +94,7 @@ export function TodoPanel() {
           </div>
         ))}
       </div>
-      <div className="mt-2 flex gap-3 border-t border-terminal-border pt-2 text-[11px] text-terminal-muted">
+      <div className="mt-2 flex gap-3 border-t border-oli-line pt-2 text-[11px] text-oli-muted">
         <span>
           {todos.filter((t) => t.status === "in_progress").length} in progress
         </span>

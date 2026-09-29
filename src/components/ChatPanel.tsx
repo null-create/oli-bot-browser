@@ -100,12 +100,12 @@ export function ChatPanel() {
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto bg-terminal-bg px-4 py-3"
+      className="flex-1 overflow-y-auto bg-oli-bg px-4 py-3"
     >
       {messages.length === 0 && !pendingText && (
-        <div className="mt-24 flex flex-col items-center gap-2 text-terminal-muted">
-          <div className="text-3xl font-bold text-terminal-green">
-            <span className="animate-pulse-green">{">"}</span>_ oli
+        <div className="mt-24 flex flex-col items-center gap-2 text-oli-muted">
+          <div className="text-3xl font-bold text-oli-accent">
+            <span className="animate-pulse-accent">{">"}</span>_ oli
           </div>
           <div className="text-xs">{tagline}</div>
         </div>
@@ -140,8 +140,8 @@ export function ChatPanel() {
       )}
 
       {isGenerating && !pendingText && (
-        <div className="flex items-center gap-1 px-2 py-1 text-xs text-terminal-green-dim">
-          <span className="inline-block h-2 w-2 animate-blink bg-terminal-green" />
+        <div className="flex items-center gap-1 px-2 py-1 text-xs text-oli-accent-dim">
+          <span className="inline-block h-2 w-2 animate-blink bg-oli-accent" />
           <span>working</span>
         </div>
       )}

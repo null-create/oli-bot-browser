@@ -39,6 +39,7 @@ import {
   WorkspaceState,
   INITIAL_CONFIG,
 } from "../types";
+import { THEMES } from "../themes";
 
 type ChatLine = {
   id: string;
@@ -540,6 +541,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setView("chat");
           fetchProfiles();
           return true;
+        case "/theme": {
+          setMessages((m) => [
+            ...m,
+            {
+              id: makeId(),
+              role: "assistant",
+              timestamp: now(),
+              content:
+                "**themes**\n\n" +
+                THEMES.map((t) => `- \`${t.id}\` — ${t.description}`).join("\n") +
+                "\n\nPick one from the theme menu in the top bar; the choice is " +
+                "remembered on this device.",
+            },
+          ]);
+          return true;
+        }
         case "/sessions":
           setView("sessions");
           return true;
@@ -569,6 +586,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 "- `/clear` — clear the conversation\n" +
                 "- `/config` — open the config view\n" +
                 "- `/profile` — pick the agent profile (also the profile chip in the status bar)\n" +
+                "- `/theme` — list the colour themes (also the theme menu in the top bar)\n" +
                 "- `/sessions` — open the sessions view\n" +
                 "- `/todos` — open the to-do view\n" +
                 "- `/subagents` — open the sub-agents view\n" +

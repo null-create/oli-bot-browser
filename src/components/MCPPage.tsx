@@ -132,18 +132,18 @@ export function MCPPage() {
   };
 
   return (
-    <div className="flex h-full flex-col bg-terminal-bg p-4">
+    <div className="flex h-full flex-col bg-oli-bg p-4">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-terminal-green">mcp servers</h2>
+        <h2 className="text-sm font-bold text-oli-accent">mcp servers</h2>
         <button
           onClick={startAdd}
-          className="flex items-center gap-1 border border-terminal-border px-2 py-1 text-xs text-terminal-green hover:bg-terminal-panel"
+          className="flex items-center gap-1 border border-oli-line px-2 py-1 text-xs text-oli-accent hover:bg-oli-elevated"
         >
           <Plus size={12} /> add server
         </button>
       </div>
 
-      <div className="mb-3 flex items-center gap-2 border border-terminal-border bg-terminal-surface px-3 py-2 text-xs text-terminal-muted">
+      <div className="mb-3 flex items-center gap-2 border border-oli-line bg-oli-surface px-3 py-2 text-xs text-oli-muted">
         <Cable size={12} />
         <span>
           {mcpServers.length} configured · changes persist to
@@ -154,24 +154,24 @@ export function MCPPage() {
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
         <div className="min-w-0 flex-1 overflow-y-auto">
           {mcpServers.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-sm text-terminal-muted">
+            <div className="flex h-full items-center justify-center text-sm text-oli-muted">
               no mcp servers configured
             </div>
           ) : (
             mcpServers.map((cfg) => (
               <div
                 key={cfg.name}
-                className="mb-2 border border-terminal-border bg-terminal-surface px-3 py-2"
+                className="mb-2 border border-oli-line bg-oli-surface px-3 py-2"
               >
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-terminal-text">
+                  <span className="font-bold text-oli-fg">
                     {cfg.name}
                   </span>
                   <span
                     className={`px-1.5 py-0.5 text-[10px] font-bold border ${
                       cfg.transport === "http"
-                        ? "border-terminal-warning text-terminal-warning"
-                        : "border-terminal-green text-terminal-green"
+                        ? "border-oli-warn text-oli-warn"
+                        : "border-oli-accent text-oli-accent"
                     }`}
                   >
                     {cfg.transport}
@@ -179,27 +179,27 @@ export function MCPPage() {
                   <span className="ml-auto flex gap-2">
                     <button
                       onClick={() => startEdit(cfg)}
-                      className="text-terminal-muted hover:text-terminal-text"
+                      className="text-oli-muted hover:text-oli-fg"
                       title="Edit"
                     >
                       <Pencil size={12} />
                     </button>
                     <button
                       onClick={() => remove(cfg.name)}
-                      className="text-terminal-muted hover:text-terminal-error"
+                      className="text-oli-muted hover:text-oli-danger"
                       title="Remove"
                     >
                       <Trash2 size={12} />
                     </button>
                   </span>
                 </div>
-                <div className="mt-1 truncate text-[11px] text-terminal-muted">
+                <div className="mt-1 truncate text-[11px] text-oli-muted">
                   {cfg.transport === "http"
                     ? cfg.url
                     : `${cfg.command} ${cfg.args.join(" ")}`.trim()}
                 </div>
                 {cfg.env && Object.keys(cfg.env).length > 0 && (
-                  <div className="mt-1 text-[11px] text-terminal-green-dim">
+                  <div className="mt-1 text-[11px] text-oli-accent-dim">
                     env: {Object.keys(cfg.env).join(", ")}
                   </div>
                 )}
@@ -209,12 +209,12 @@ export function MCPPage() {
         </div>
 
         {(adding || editing !== null) && (
-          <div className="w-full shrink-0 border border-terminal-border bg-terminal-surface p-3 lg:w-80">
-            <h3 className="mb-3 text-xs font-bold text-terminal-green">
+          <div className="w-full shrink-0 border border-oli-line bg-oli-surface p-3 lg:w-80">
+            <h3 className="mb-3 text-xs font-bold text-oli-accent">
               {editing ? `edit: ${editing}` : "add server"}
             </h3>
 
-            <label className="mb-1 block text-xs text-terminal-muted">
+            <label className="mb-1 block text-xs text-oli-muted">
               name
             </label>
             <input
@@ -224,11 +224,11 @@ export function MCPPage() {
                 setSaved(false);
                 setDraft({ ...draft, name: e.target.value });
               }}
-              className="mb-3 w-full border border-terminal-border bg-terminal-bg px-2 py-1 text-xs text-terminal-text focus:border-terminal-green focus:outline-none disabled:text-terminal-muted"
+              className="mb-3 w-full border border-oli-line bg-oli-bg px-2 py-1 text-xs text-oli-fg focus:border-oli-accent focus:outline-none disabled:text-oli-muted"
               placeholder="e.g. filesystem"
             />
 
-            <label className="mb-1 block text-xs text-terminal-muted">
+            <label className="mb-1 block text-xs text-oli-muted">
               transport
             </label>
             <div className="mb-3 flex gap-1">
@@ -241,8 +241,8 @@ export function MCPPage() {
                   }}
                   className={`px-3 py-1 text-xs font-bold border ${
                     draft.transport === t
-                      ? "border-terminal-green bg-terminal-panel text-terminal-green"
-                      : "border-terminal-border bg-terminal-bg text-terminal-muted"
+                      ? "border-oli-accent bg-oli-elevated text-oli-accent"
+                      : "border-oli-line bg-oli-bg text-oli-muted"
                   }`}
                 >
                   {t}
@@ -252,7 +252,7 @@ export function MCPPage() {
 
             {draft.transport === "http" ? (
               <>
-                <label className="mb-1 block text-xs text-terminal-muted">
+                <label className="mb-1 block text-xs text-oli-muted">
                   url
                 </label>
                 <input
@@ -261,13 +261,13 @@ export function MCPPage() {
                     setSaved(false);
                     setDraft({ ...draft, url: e.target.value });
                   }}
-                  className="mb-3 w-full border border-terminal-border bg-terminal-bg px-2 py-1 text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
+                  className="mb-3 w-full border border-oli-line bg-oli-bg px-2 py-1 text-xs text-oli-fg focus:border-oli-accent focus:outline-none"
                   placeholder="http://localhost:3000/mcp"
                 />
               </>
             ) : (
               <>
-                <label className="mb-1 block text-xs text-terminal-muted">
+                <label className="mb-1 block text-xs text-oli-muted">
                   command
                 </label>
                 <input
@@ -276,11 +276,11 @@ export function MCPPage() {
                     setSaved(false);
                     setDraft({ ...draft, command: e.target.value });
                   }}
-                  className="mb-3 w-full border border-terminal-border bg-terminal-bg px-2 py-1 text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
+                  className="mb-3 w-full border border-oli-line bg-oli-bg px-2 py-1 text-xs text-oli-fg focus:border-oli-accent focus:outline-none"
                   placeholder="e.g. npx"
                 />
 
-                <label className="mb-1 block text-xs text-terminal-muted">
+                <label className="mb-1 block text-xs text-oli-muted">
                   arguments (space separated)
                 </label>
                 <input
@@ -289,11 +289,11 @@ export function MCPPage() {
                     setSaved(false);
                     setDraft({ ...draft, args: e.target.value });
                   }}
-                  className="mb-3 w-full border border-terminal-border bg-terminal-bg px-2 py-1 text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
+                  className="mb-3 w-full border border-oli-line bg-oli-bg px-2 py-1 text-xs text-oli-fg focus:border-oli-accent focus:outline-none"
                   placeholder="-y mcp-server-filesystem /tmp"
                 />
 
-                <label className="mb-1 block text-xs text-terminal-muted">
+                <label className="mb-1 block text-xs text-oli-muted">
                   env vars (KEY=VALUE …)
                 </label>
                 <textarea
@@ -303,26 +303,26 @@ export function MCPPage() {
                     setDraft({ ...draft, env: e.target.value });
                   }}
                   rows={3}
-                  className="mb-3 w-full resize-y border border-terminal-border bg-terminal-bg px-2 py-1 font-mono text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
+                  className="mb-3 w-full resize-y border border-oli-line bg-oli-bg px-2 py-1 font-mono text-xs text-oli-fg focus:border-oli-accent focus:outline-none"
                   placeholder="API_KEY=xxx"
                 />
               </>
             )}
 
             {error && (
-              <div className="mb-3 text-xs text-terminal-error">{`\u2717 ${error}`}</div>
+              <div className="mb-3 text-xs text-oli-danger">{`\u2717 ${error}`}</div>
             )}
 
             <div className="flex gap-2">
               <button
                 onClick={submit}
-                className="flex flex-1 items-center justify-center gap-1 border border-terminal-green bg-terminal-panel px-2 py-1 text-xs text-terminal-green hover:bg-terminal-panel-selected"
+                className="flex flex-1 items-center justify-center gap-1 border border-oli-accent bg-oli-elevated px-2 py-1 text-xs text-oli-accent hover:bg-oli-selected"
               >
                 <Save size={12} /> {saved ? "saved!" : editing ? "save" : "add"}
               </button>
               <button
                 onClick={cancel}
-                className="flex items-center gap-1 border border-terminal-border px-2 py-1 text-xs text-terminal-muted hover:text-terminal-text"
+                className="flex items-center gap-1 border border-oli-line px-2 py-1 text-xs text-oli-muted hover:text-oli-fg"
               >
                 <X size={12} /> cancel
               </button>

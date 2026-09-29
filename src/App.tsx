@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { AppProvider, useApp } from "./context/AppContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { TopBar } from "./components/TopBar";
 import { StatusBar } from "./components/StatusBar";
 import { Sidebar } from "./components/Sidebar";
@@ -48,7 +49,7 @@ function AppShell() {
   const closeNav = () => setNavOpen(false);
 
   return (
-    <div className="flex h-dvh w-full flex-col overflow-hidden bg-terminal-bg font-mono text-sm">
+    <div className="flex h-dvh w-full flex-col overflow-hidden bg-oli-bg font-mono text-sm">
       <TopBar onMenu={() => setNavOpen(true)} />
       <div className="flex min-h-0 flex-1">
         <div className="hidden md:flex">
@@ -59,13 +60,13 @@ function AppShell() {
         {navOpen && (
           <div className="fixed inset-0 z-50 flex md:hidden">
             <div
-              className="absolute inset-0 bg-terminal-bg/80"
+              className="absolute inset-0 bg-oli-bg/80"
               onClick={closeNav}
             />
-            <div className="relative flex h-full flex-col border-r border-terminal-border-bright bg-terminal-surface shadow-2xl">
+            <div className="relative flex h-full flex-col border-r border-oli-line-strong bg-oli-surface shadow-2xl">
               <button
                 onClick={closeNav}
-                className="flex h-8 w-full items-center justify-end border-b border-terminal-border px-2 text-terminal-muted hover:text-terminal-green"
+                className="flex h-8 w-full items-center justify-end border-b border-oli-line px-2 text-oli-muted hover:text-oli-accent"
                 title="Close menu"
               >
                 <X size={14} />
@@ -85,8 +86,10 @@ function AppShell() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppShell />
-    </AppProvider>
+    <ThemeProvider>
+      <AppProvider>
+        <AppShell />
+      </AppProvider>
+    </ThemeProvider>
   );
 }

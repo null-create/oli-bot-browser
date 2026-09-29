@@ -245,6 +245,7 @@ export const COMMANDS = [
   "/servers",
   "/mode",
   "/profile",
+  "/theme",
   "/context",
   "/mcp",
   "/sessions",

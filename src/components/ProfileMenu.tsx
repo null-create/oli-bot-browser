@@ -67,8 +67,8 @@ export function ProfileMenu() {
         aria-haspopup="listbox"
         aria-expanded={open}
         title="Select the agent profile"
-        className={`flex items-center gap-0.5 hover:text-terminal-text ${
-          open ? "text-terminal-green" : "text-terminal-muted"
+        className={`flex items-center gap-0.5 hover:text-oli-fg ${
+          open ? "text-oli-accent" : "text-oli-muted"
         } ${busy ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
       >
         <span>:: {activeName}</span>
@@ -77,7 +77,7 @@ export function ProfileMenu() {
       {open && (
         <div
           role="listbox"
-          className="absolute bottom-full right-0 z-50 mb-1 max-h-56 w-56 overflow-y-auto border border-terminal-border-bright bg-terminal-panel shadow-lg"
+          className="absolute bottom-full right-0 z-50 mb-1 max-h-56 w-56 overflow-y-auto border border-oli-line-strong bg-oli-elevated shadow-lg"
         >
           {entries.map((p, i) => {
             const isActive = p.name === activeName;
@@ -95,19 +95,19 @@ export function ProfileMenu() {
                 onMouseEnter={() => setSelectedIdx(i)}
                 className={`cursor-pointer px-2 py-1 text-[11px] ${
                   i === selectedIdx
-                    ? "bg-terminal-panel text-terminal-text"
-                    : "text-terminal-muted"
-                } ${unavailable ? "text-terminal-warning" : ""}`}
+                    ? "bg-oli-elevated text-oli-fg"
+                    : "text-oli-muted"
+                } ${unavailable ? "text-oli-warn" : ""}`}
               >
                 <div className="flex items-center gap-1">
                   {isActive ? (
-                    <span className="text-terminal-green">▸</span>
+                    <span className="text-oli-accent">▸</span>
                   ) : (
                     <span className="w-[0.6rem]" />
                   )}
                   <span
                     className={`truncate font-bold ${
-                      isActive ? "text-terminal-green" : "text-terminal-text"
+                      isActive ? "text-oli-accent" : "text-oli-fg"
                     }`}
                   >
                     {p.name}
@@ -115,7 +115,7 @@ export function ProfileMenu() {
                 </div>
                 {"description" in p && p.description && (
                   <div
-                    className="ml-[0.6rem] truncate pl-1 text-terminal-muted"
+                    className="ml-[0.6rem] truncate pl-1 text-oli-muted"
                     title={p.description}
                   >
                     {p.description}
@@ -125,12 +125,12 @@ export function ProfileMenu() {
             );
           })}
           {busy && (
-            <div className="border-t border-terminal-border px-2 py-1 text-[10px] text-terminal-warning">
+            <div className="border-t border-oli-line px-2 py-1 text-[10px] text-oli-warn">
               profile switches apply to the next turn
             </div>
           )}
           {profileError && (
-            <div className="border-t border-terminal-border px-2 py-1 text-[10px] text-terminal-error">
+            <div className="border-t border-oli-line px-2 py-1 text-[10px] text-oli-danger">
               ✗ {profileError}
             </div>
           )}

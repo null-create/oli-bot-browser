@@ -15,36 +15,36 @@ export function StatusBar() {
   const ws = workspace?.current;
 
   return (
-    <div className="flex h-6 items-center justify-between border-t border-terminal-border-bright bg-terminal-surface px-3 text-[11px] text-terminal-muted">
+    <div className="flex h-6 items-center justify-between border-t border-oli-line-strong bg-oli-surface px-3 text-[11px] text-oli-muted">
       <div className="hidden gap-2 md:flex">
         <span>^Q quit</span>
         <span>^L clear</span>
       </div>
       <div className="flex min-w-0 items-center gap-2">
-        <span className="text-terminal-green">[AGENT]</span>
-        <span className="text-terminal-green-dim">[{mode.toUpperCase()}]</span>
-        {isOffline && <span className="text-terminal-warning">[OFFLINE]</span>}
+        <span className="text-oli-accent">[AGENT]</span>
+        <span className="text-oli-accent-dim">[{mode.toUpperCase()}]</span>
+        {isOffline && <span className="text-oli-warn">[OFFLINE]</span>}
         {ws && (
           <span
-            className={`hidden truncate sm:inline ${workspace.sensitive ? "text-terminal-warning" : "text-terminal-green-dim"}`}
+            className={`hidden truncate sm:inline ${workspace.sensitive ? "text-oli-warn" : "text-oli-accent-dim"}`}
             title={ws}
           >
             ws: {ws}
           </span>
         )}
-        <span className="hidden text-terminal-text md:inline">:: {model}</span>
+        <span className="hidden text-oli-fg md:inline">:: {model}</span>
         <ProfileMenu />
-        <span className="ml-2 text-terminal-green-dim">
+        <span className="ml-2 text-oli-accent-dim">
           {estimatedPrefix}
           {tokens} tok
         </span>
         <span
           className={`ml-1 ${
             status === "connected"
-              ? "text-terminal-green"
+              ? "text-oli-accent"
               : status === "connecting"
-                ? "text-terminal-warning"
-                : "text-terminal-error"
+                ? "text-oli-warn"
+                : "text-oli-danger"
           }`}
         >
           {status === "connected"

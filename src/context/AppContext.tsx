@@ -23,10 +23,15 @@ import {
   unsetWorkspace as unsetWorkspaceApi,
 } from "../lib/workspace";
 import {
+  listProfiles as listProfilesApi,
+  selectProfile as selectProfileApi,
+} from "../lib/profiles";
+import {
   MCPServerConfig,
   OliConfig,
   OliEvent,
   OliView,
+  ProfileInfo,
   Session,
   SubAgentRun,
   TodoItem,
@@ -62,6 +67,10 @@ type AppState = {
   };
   config: OliConfig;
   mcpServers: MCPServerConfig[];
+  profiles: ProfileInfo[];
+  profileError: string | null;
+  fetchProfiles: () => Promise<void>;
+  selectProfile: (name: string) => Promise<boolean>;
   workspace: WorkspaceState | null;
   fetchWorkspace: () => Promise<void>;
   setWorkspace: (path: string) => Promise<boolean>;
@@ -120,6 +129,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [subAgents, setSubAgents] = useState<SubAgentRun[]>([]);
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [mcpServers, setMcpServers] = useState<MCPServerConfig[]>([]);
+  const [profiles, setProfiles] = useState<ProfileInfo[]>([]);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [workspace, setWorkspaceState] = useState<WorkspaceState | null>(null);
   const [usage, setUsage] = useState({
     prompt_tokens: 0,
@@ -479,6 +490,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
     clear(currentSessionId);
   }, [clear, currentSessionId]);
 
+  const fetchProfiles = useCallback(async () => {
+    try {
+      setProfiles(await listProfilesApi());
+      setProfileError(null);
+    } catch (e) {
+      console.error("Failed to fetch profiles from server", e);
+    }
+  }, []);
+
+  // Switching profile changes the system prompt and tool permissions for the
+  // shared server-side agent, so the conversation is cleared to avoid mixing
+  // two personas in one thread — matching the TUI's `/profile load`.
+  const selectProfile = useCallback(
+    async (name: string): Promise<boolean> => {
+      try {
+        const active = await selectProfileApi(name);
+        setProfiles((prev) =>
+          prev.map((p) => ({ ...p, active: p.name === active.name })),
+        );
+        setConfig((prev) => ({ ...prev, api_profile: active.name }));
+        setProfileError(null);
+        clearChat();
+        return true;
+      } catch (e) {
+        console.error(`Failed to select profile '${name}'`, e);
+        setProfileError(
+          e instanceof Error ? e.message : `Failed to select profile '${name}'`,
+        );
+        return false;
+      }
+    },
+    [clearChat],
+  );
+
   const runCommand = useCallback(
     (text: string): boolean => {
       const trimmed = text.trim();
@@ -490,6 +535,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return true;
         case "/config":
           setView("config");
+          return true;
+        case "/profile":
+          setView("chat");
+          fetchProfiles();
           return true;
         case "/sessions":
           setView("sessions");
@@ -519,6 +568,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 "**oli commands**\n\n" +
                 "- `/clear` — clear the conversation\n" +
                 "- `/config` — open the config view\n" +
+                "- `/profile` — pick the agent profile (also the profile chip in the status bar)\n" +
                 "- `/sessions` — open the sessions view\n" +
                 "- `/todos` — open the to-do view\n" +
                 "- `/subagents` — open the sub-agents view\n" +
@@ -533,7 +583,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return false;
       }
     },
-    [clearChat],
+    [clearChat, fetchProfiles],
   );
 
   const newSession = useCallback(async () => {
@@ -748,6 +798,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [fetchWorkspace]);
 
   useEffect(() => {
+    fetchProfiles();
+  }, [fetchProfiles]);
+
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       let list: Session[] = [];
@@ -802,6 +856,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       usage,
       config,
       mcpServers,
+      profiles,
+      profileError,
+      fetchProfiles,
+      selectProfile,
       workspace,
       fetchWorkspace,
       setWorkspace,
@@ -839,6 +897,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       usage,
       config,
       mcpServers,
+      profiles,
+      profileError,
+      fetchProfiles,
+      selectProfile,
       workspace,
       fetchWorkspace,
       setWorkspace,
@@ -856,10 +918,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       renameCurrentSession,
       fetchConfig,
       saveConfig,
-      fetchMcpServers,
-      addMcpServer,
-      updateMcpServer,
-      removeMcpServer,
       resetUsage,
     ],
   );

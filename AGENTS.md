@@ -94,9 +94,18 @@ src/
   `MCPServerConfig`) managed over `GET/POST /v1/mcp`, `PUT/DELETE /v1/mcp/{name}`
   and driven from `AppContext` (`mcpServers` + CRUD helpers), rendered by
   `MCPPage.tsx`.
+- **Profiles:** The status bar's `:: <profile>` chip (`ProfileMenu.tsx`) lists
+  the agent profiles from `GET /v1/profiles` and switches with
+  `PUT /v1/profiles/{name}` (`src/lib/profiles.ts`). Selection is **process-global**
+  on the server's single shared `Agent`, so it applies to every open tab and
+  affects the next turn — no restart needed. A successful switch clears the
+  conversation (via `clearChat()`) so two personas aren't mixed in one thread,
+  matching the TUI's `/profile load`. `config.api_profile` is kept in sync as the
+  read-side mirror. `/profile` in the input re-fetches the list.
 - **Slash commands:** Handled client-side where they map to UI actions:
-  `/clear`, `/config`, `/sessions`, `/todos`, `/subagents`, `/mcp`, `/help`. All
-  other commands (`/model`, `/servers`, …) go to the agent as plain messages.
+  `/clear`, `/config`, `/profile`, `/sessions`, `/todos`, `/subagents`, `/mcp`,
+  `/help`. All other commands (`/model`, `/servers`, …) go to the agent as plain
+  messages.
 
 ## Conventions
 

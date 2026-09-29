@@ -1,10 +1,10 @@
 import { useApp } from "../context/AppContext";
+import { ProfileMenu } from "./ProfileMenu";
 
 export function StatusBar() {
   const { config, usage, status, workspace } = useApp();
 
   const mode = config.api_mode || "agent";
-  const profile = config.api_profile || "default";
   const model =
     config.backend === "ollama"
       ? config.ollama_model || "ollama"
@@ -33,9 +33,7 @@ export function StatusBar() {
           </span>
         )}
         <span className="hidden text-terminal-text md:inline">:: {model}</span>
-        <span className="hidden text-terminal-muted lg:inline">
-          :: {profile}
-        </span>
+        <ProfileMenu />
         <span className="ml-2 text-terminal-green-dim">
           {estimatedPrefix}
           {tokens} tok

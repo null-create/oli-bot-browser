@@ -1,9 +1,10 @@
 # oli-web
 
 A self-contained browser UI for the `oli` agent harness. Terminal look
-(black/green, sharp edges, JetBrains Mono), React + TypeScript + Tailwind +
-Vite. Talks to the `oli-server` WebSocket at `/v1/chat` for real-time
-streaming (text, thinking, tool calls, sub-agents, token usage, todos).
+(black/green, sharp edges, JetBrains Mono) by default, with switchable
+themes, React + TypeScript + Tailwind + Vite. Talks to the `oli-server`
+WebSocket at `/v1/chat` for real-time streaming (text, thinking, tool calls,
+sub-agents, token usage, todos).
 
 ## Views
 
@@ -64,20 +65,29 @@ by run.
 
 ```
 src/
-  components/   TopBar, StatusBar, Sidebar, ChatPanel, ChatInput, MessageBubble,
-                ThinkingBlock, ToolCallDisplay, SessionList, ConfigPage,
-                SubAgentView, TodoPanel
+  components/   TopBar, ThemeMenu, StatusBar, Sidebar, ChatPanel, ChatInput,
+                MessageBubble, ThinkingBlock, ToolCallDisplay, SessionList,
+                ConfigPage, SubAgentView, TodoPanel
   context/      AppContext — global state + WebSocket event reducer
+                ThemeContext — active theme (client-side only)
   hooks/        useOliSocket — auto-reconnecting WebSocket with send/clear
   lib/          sessions — REST session client (list/create/get/rename/delete)
-  types.ts      OliEvent union, domain types, COMMANDS, INITIAL_CONFIG
+  themes.ts     theme ids, labels and copy for the theme menu
 ```
 
 ## Notes
 
-- Sessions persist server-side on `oli-bot` (shared with the TUI's `ConversationStore`); the browser creates a fresh session on load and per new-session, and each turn is sent with `session_id`. There is no localStorage; if the backend is unreachable the UI falls back to an ephemeral in-memory session.
+- Sessions persist server-side on `oli-bot` (shared with the TUI's `ConversationStore`); the browser creates a fresh session on load and per new-session, and each turn is sent with `session_id`. If the backend is unreachable the UI falls back to an ephemeral in-memory session. The chat transcript is never stored in the browser.
+- **Themes** are picked from the swatch menu in the top bar (or `/theme` to
+  list them) and remembered in `localStorage` under `oli-theme` — that key is
+  the only thing the browser persists. There are six: `terminal` (default),
+  `gemini`, `kid`, `amber`, `synthwave` and `paper`. Switching is entirely
+  client-side; no theme is sent to the backend. Palettes live in
+  `src/index.css` as `[data-theme="…"]` blocks driving the `oli-*` Tailwind
+  tokens, so a new theme is one CSS block plus one entry in `src/themes.ts`.
 - Slash commands are handled client-side where they map to UI actions:
-  `/clear`, `/config`, `/sessions`, `/todos`, `/subagents`, and `/help`. All
+  `/clear`, `/config`, `/profile`, `/theme`, `/sessions`, `/todos`,
+  `/subagents`, and `/help`. All
   other commands (`/model`, `/servers`, …) are sent to the agent as plain
   messages.
 - The app reads no environment variables; config edits in the Config view are

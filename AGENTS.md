@@ -5,8 +5,9 @@ Guidance for AI agents and contributors working on this repository.
 ## Overview
 
 `oli-web` is a self-contained browser UI for the `oli` agent harness. It is a
-frontend-only React SPA with a terminal aesthetic (black/green, sharp edges,
-JetBrains Mono). It talks to the `oli-server` backend (a sibling repo) over a
+frontend-only React SPA whose default look is the terminal aesthetic
+(black/green, sharp edges, JetBrains Mono), switchable at runtime to five
+other themes. It talks to the `oli-server` backend (a sibling repo) over a
 WebSocket at `/v1/chat` for real-time streaming of text, thinking, tool calls,
 sub-agents, token usage, and todos.
 
@@ -56,12 +57,14 @@ but shows no live data.
 src/
   main.tsx               ReactDOM entry (StrictMode)
   App.tsx                Shell: TopBar / Sidebar / MainView / StatusBar
-  index.css              Tailwind base + terminal scrollbar/selection overrides
+  index.css              Tailwind base, theme palettes, scrollbar/selection rules
   types.ts               OliEvent union, domain types, COMMANDS, INITIAL_CONFIG
-  components/            TopBar, StatusBar, Sidebar, ChatPanel, ChatInput,
+  themes.ts              Theme ids, labels, descriptions (menu metadata only)
+  components/            TopBar, ThemeMenu, StatusBar, Sidebar, ChatPanel, ChatInput,
                          MessageBubble, ThinkingBlock, ToolCallDisplay,
                          SessionList, ConfigPage, MCPPage, SubAgentView, TodoPanel
   context/AppContext.tsx Global state + WebSocket event reducer
+  context/ThemeContext.tsx Active theme; applies data-theme, writes localStorage
   hooks/useOliSocket.ts  Auto-reconnecting WebSocket with send/clear helpers
   lib/sessions.ts        REST session client (list/create/get/rename/delete)
 ```
@@ -85,26 +88,51 @@ src/
 **Persistence:** Sessions persist server-side on `oli-server`. The browser
   creates a fresh session on load and per new-session, via REST
   `GET /v1/sessions` / `POST /v1/sessions` (see `src/lib/sessions.ts`); each turn
-  is sent with `session_id` and the backend persists it. There is no
-  localStorage. If the backend is unreachable, the UI falls back to an
-  ephemeral in-memory session.
+  is sent with `session_id` and the backend persists it. The transcript is never
+  stored in the browser. The one client-side key is `oli-theme` (see Themes
+  below). If the backend is unreachable, the UI falls back to an ephemeral
+  in-memory session.
 - **Config:** The Config view edits an in-memory React state object seeded from
   `INITIAL_CONFIG` in `src/types.ts`; it round-trips to the server over
   `GET/PUT /v1/config`. MCP server config is a separate list (`src/types.ts`
   `MCPServerConfig`) managed over `GET/POST /v1/mcp`, `PUT/DELETE /v1/mcp/{name}`
   and driven from `AppContext` (`mcpServers` + CRUD helpers), rendered by
   `MCPPage.tsx`.
+- **Profiles:** The status bar's `:: <profile>` chip (`ProfileMenu.tsx`) lists
+  the agent profiles from `GET /v1/profiles` and switches with
+  `PUT /v1/profiles/{name}` (`src/lib/profiles.ts`). Selection is **process-global**
+  on the server's single shared `Agent`, so it applies to every open tab and
+  affects the next turn — no restart needed. A successful switch clears the
+  conversation (via `clearChat()`) so two personas aren't mixed in one thread,
+  matching the TUI's `/profile load`. `config.api_profile` is kept in sync as the
+  read-side mirror. `/profile` in the input re-fetches the list.
+- **Themes:** Purely front-end — no backend field, no `/v1` call. The swatch
+  menu in the top bar (`ThemeMenu.tsx`) sets `data-theme` on `<html>` and
+  persists the id in `localStorage` (`oli-theme`); an inline script in
+  `index.html` re-applies it before first paint so there is no flash. Palettes
+  live in `src/index.css` as `[data-theme="…"]` blocks that set the `--oli-*`
+  custom properties, which `tailwind.config.js` wires into the `oli-*` colour
+  tokens — so the same component classes retint with no per-theme code. Labels
+  and copy live in `src/themes.ts`. `/theme` lists the available ids.
+  `src/themes.test.ts` parses the CSS and enforces palette completeness plus
+  WCAG contrast floors, so a new theme that is unreadable fails CI rather than
+  review. To add a theme: one CSS block, one `themes.ts` entry, one test case.
 - **Slash commands:** Handled client-side where they map to UI actions:
-  `/clear`, `/config`, `/sessions`, `/todos`, `/subagents`, `/mcp`, `/help`. All
-  other commands (`/model`, `/servers`, …) go to the agent as plain messages.
+  `/clear`, `/config`, `/profile`, `/theme`, `/sessions`, `/todos`, `/subagents`, `/mcp`,
+  `/help`. All other commands (`/model`, `/servers`, …) go to the agent as plain
+  messages.
 
 ## Conventions
 
 - **Comments:** Do not add code comments unless asked.
 - **Strictness:** TypeScript is strict — keep types tight, avoid `any`.
-- **Terminal aesthetic:** The green-on-black palette, zero border radius, and
-  blink/pulse animations live in `tailwind.config.js` and `index.css`. Preserve
-  the look when adding UI.
+- **Terminal aesthetic:** The default look — green on black, zero border radius,
+  and blink/pulse animations — is the `terminal` theme, not a hardcoded style.
+  Colours go through the semantic `oli-*` Tailwind tokens (`oli-bg`, `oli-fg`,
+  `oli-accent`, `oli-line`, …) which resolve to CSS custom properties. **Never
+  introduce a raw hex, `bg-black`, `text-green-400` or any default-palette
+  colour in a component** — that is what breaks the other five themes. Add new
+  surface colours as an `oli-*` token instead.
 - **Formatting:** 2-space indent, single quotes, semicolons.
 
 ## Container notes

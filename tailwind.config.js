@@ -4,25 +4,27 @@ export default {
   theme: {
     extend: {
       colors: {
-        terminal: {
-          bg: "#020403",
-          surface: "#030503",
-          panel: "#0a120d",
-          border: "#1a3a28",
-          "border-bright": "#2ecc71",
-          green: "#2ecc71",
-          "green-dim": "#1a7a42",
-          "green-bright": "#58d68d",
-          muted: "#6b7d74",
-          text: "#d7e4de",
-          error: "#e74c3c",
-          "error-bg": "#1a0503",
-          warning: "#f39c12",
-          info: "#3498db",
+        oli: {
+          bg: "rgb(var(--oli-bg) / <alpha-value>)",
+          surface: "rgb(var(--oli-surface) / <alpha-value>)",
+          elevated: "rgb(var(--oli-elevated) / <alpha-value>)",
+          selected: "rgb(var(--oli-selected) / <alpha-value>)",
+          line: "rgb(var(--oli-line) / <alpha-value>)",
+          "line-strong": "rgb(var(--oli-line-strong) / <alpha-value>)",
+          accent: "rgb(var(--oli-accent) / <alpha-value>)",
+          "accent-dim": "rgb(var(--oli-accent-dim) / <alpha-value>)",
+          "accent-bright": "rgb(var(--oli-accent-bright) / <alpha-value>)",
+          muted: "rgb(var(--oli-muted) / <alpha-value>)",
+          fg: "rgb(var(--oli-fg) / <alpha-value>)",
+          danger: "rgb(var(--oli-danger) / <alpha-value>)",
+          "danger-bg": "rgb(var(--oli-danger-bg) / <alpha-value>)",
+          warn: "rgb(var(--oli-warn) / <alpha-value>)",
+          info: "rgb(var(--oli-info) / <alpha-value>)",
         },
       },
       fontFamily: {
         mono: [
+          "var(--oli-font)",
           '"JetBrains Mono"',
           '"Fira Code"',
           '"Cascadia Code"',
@@ -33,25 +35,25 @@ export default {
       },
       borderRadius: {
         none: "0",
-        sm: "0",
-        DEFAULT: "0",
-        md: "0",
-        lg: "0",
-        xl: "0",
-        "2xl": "0",
-        "3xl": "0",
-        full: "0",
+        sm: "calc(var(--oli-radius) * 0.5)",
+        DEFAULT: "var(--oli-radius)",
+        md: "var(--oli-radius)",
+        lg: "calc(var(--oli-radius) * 1.5)",
+        xl: "calc(var(--oli-radius) * 2)",
+        "2xl": "calc(var(--oli-radius) * 2.5)",
+        "3xl": "calc(var(--oli-radius) * 3)",
+        full: "9999px",
       },
       animation: {
         blink: "blink 1s step-end infinite",
-        "pulse-green": "pulse-green 2s ease-in-out infinite",
+        "pulse-accent": "pulse-accent 2s ease-in-out infinite",
       },
       keyframes: {
         blink: {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0" },
         },
-        "pulse-green": {
+        "pulse-accent": {
           "0%, 100%": { opacity: "0.4" },
           "50%": { opacity: "1" },
         },

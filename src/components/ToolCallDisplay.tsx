@@ -21,27 +21,27 @@ export function ToolCallDisplay({ call }: { call: ToolCall }) {
   const params = formatToolParams(call.parameters);
 
   return (
-    <div className="my-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 border border-terminal-border bg-terminal-surface px-2 py-1 text-xs">
+    <div className="my-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 border border-oli-line bg-oli-surface px-2 py-1 text-xs">
       {call.result !== undefined ? (
         isError ? (
-          <XCircle size={12} className="shrink-0 text-terminal-error" />
+          <XCircle size={12} className="shrink-0 text-oli-danger" />
         ) : (
-          <CheckCircle2 size={12} className="shrink-0 text-terminal-green" />
+          <CheckCircle2 size={12} className="shrink-0 text-oli-accent" />
         )
       ) : (
-        <Loader2 size={12} className="shrink-0 animate-spin text-terminal-green" />
+        <Loader2 size={12} className="shrink-0 animate-spin text-oli-accent" />
       )}
-      <span className="shrink-0 font-bold text-terminal-text">{call.name}</span>
+      <span className="shrink-0 font-bold text-oli-fg">{call.name}</span>
       {params && (
-        <span className="min-w-0 flex-1 truncate text-terminal-muted">
+        <span className="min-w-0 flex-1 truncate text-oli-muted">
           {"\u00b7"} {params}
         </span>
       )}
-      <span className="shrink-0 text-terminal-green-dim">
+      <span className="shrink-0 text-oli-accent-dim">
         {"\u00b7"} {elapsed.toFixed(1)}s
       </span>
       {call.result !== undefined && isError && (
-        <span className="min-w-0 w-full basis-full truncate font-semibold text-terminal-error">
+        <span className="min-w-0 w-full basis-full truncate font-semibold text-oli-danger">
           {call.result}
         </span>
       )}

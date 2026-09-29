@@ -2,10 +2,134 @@
 @tailwind components;
 @tailwind utilities;
 
+:root,
+[data-theme="terminal"] {
+  --oli-bg: 2 4 3;
+  --oli-surface: 3 5 3;
+  --oli-elevated: 10 18 13;
+  --oli-selected: 18 48 31;
+  --oli-line: 26 58 40;
+  --oli-line-strong: 46 204 113;
+  --oli-accent: 46 204 113;
+  --oli-accent-dim: 26 122 66;
+  --oli-accent-bright: 88 214 141;
+  --oli-muted: 107 125 116;
+  --oli-fg: 215 228 222;
+  --oli-danger: 231 76 60;
+  --oli-danger-bg: 26 5 3;
+  --oli-warn: 243 156 18;
+  --oli-info: 52 152 219;
+  --oli-radius: 0px;
+  --oli-font: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace,
+    SFMono-Regular, monospace;
+  color-scheme: dark;
+}
+
+[data-theme="gemini"] {
+  --oli-bg: 255 255 255;
+  --oli-surface: 248 249 250;
+  --oli-elevated: 255 255 255;
+  --oli-selected: 232 240 254;
+  --oli-line: 232 234 237;
+  --oli-line-strong: 218 220 224;
+  --oli-accent: 11 87 208;
+  --oli-accent-dim: 107 112 117;
+  --oli-accent-bright: 26 115 232;
+  --oli-muted: 95 99 104;
+  --oli-fg: 31 31 31;
+  --oli-danger: 201 34 31;
+  --oli-danger-bg: 252 232 230;
+  --oli-warn: 160 90 0;
+  --oli-info: 123 63 181;
+  --oli-radius: 0px;
+  color-scheme: light;
+}
+
+[data-theme="kid"] {
+  --oli-bg: 255 250 240;
+  --oli-surface: 255 243 214;
+  --oli-elevated: 255 255 255;
+  --oli-selected: 255 224 138;
+  --oli-line: 240 220 192;
+  --oli-line-strong: 245 185 66;
+  --oli-accent: 176 58 8;
+  --oli-accent-dim: 125 104 85;
+  --oli-accent-bright: 193 71 8;
+  --oli-muted: 122 106 90;
+  --oli-fg: 61 43 31;
+  --oli-danger: 189 42 85;
+  --oli-danger-bg: 255 227 236;
+  --oli-warn: 143 92 0;
+  --oli-info: 11 114 133;
+  --oli-radius: 12px;
+  --oli-font: "Nunito", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  color-scheme: light;
+}
+
+[data-theme="amber"] {
+  --oli-bg: 13 8 3;
+  --oli-surface: 20 13 4;
+  --oli-elevated: 29 18 6;
+  --oli-selected: 58 36 8;
+  --oli-line: 74 47 10;
+  --oli-line-strong: 255 176 0;
+  --oli-accent: 255 176 0;
+  --oli-accent-dim: 168 114 0;
+  --oli-accent-bright: 255 204 102;
+  --oli-muted: 154 120 70;
+  --oli-fg: 255 207 135;
+  --oli-danger: 255 107 74;
+  --oli-danger-bg: 42 12 6;
+  --oli-warn: 224 160 0;
+  --oli-info: 95 184 176;
+  --oli-radius: 0px;
+  color-scheme: dark;
+}
+
+[data-theme="synthwave"] {
+  --oli-bg: 26 11 46;
+  --oli-surface: 36 16 67;
+  --oli-elevated: 46 21 80;
+  --oli-selected: 24 0 74;
+  --oli-line: 70 34 110;
+  --oli-line-strong: 255 46 151;
+  --oli-accent: 255 46 151;
+  --oli-accent-dim: 204 90 168;
+  --oli-accent-bright: 255 122 194;
+  --oli-muted: 138 127 176;
+  --oli-fg: 232 228 245;
+  --oli-danger: 255 84 112;
+  --oli-danger-bg: 58 13 36;
+  --oli-warn: 255 204 51;
+  --oli-info: 45 226 230;
+  --oli-radius: 0px;
+  color-scheme: dark;
+}
+
+[data-theme="paper"] {
+  --oli-bg: 246 241 231;
+  --oli-surface: 239 232 219;
+  --oli-elevated: 253 250 244;
+  --oli-selected: 230 220 200;
+  --oli-line: 221 210 189;
+  --oli-line-strong: 181 164 136;
+  --oli-accent: 47 93 124;
+  --oli-accent-dim: 94 104 115;
+  --oli-accent-bright: 29 66 88;
+  --oli-muted: 111 106 94;
+  --oli-fg: 43 39 33;
+  --oli-danger: 163 58 42;
+  --oli-danger-bg: 243 222 215;
+  --oli-warn: 122 95 24;
+  --oli-info: 122 92 138;
+  --oli-radius: 0px;
+  color-scheme: light;
+}
+
 *,
 *::before,
 *::after {
-  border-radius: 0 !important;
+  border-radius: var(--oli-radius) !important;
 }
 
 ::-webkit-scrollbar {
@@ -13,35 +137,35 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #020403;
+  background: rgb(var(--oli-bg));
 }
 ::-webkit-scrollbar-thumb {
-  background: #1a3a28;
+  background: rgb(var(--oli-line));
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2ecc71;
+  background: rgb(var(--oli-accent));
 }
 
 ::selection {
-  background: #1a7a42;
-  color: #d7e4de;
+  background: rgb(var(--oli-selected));
+  color: rgb(var(--oli-fg));
 }
 
 textarea:focus,
 input:focus {
-  outline: 1px solid #2ecc71;
+  outline: 1px solid rgb(var(--oli-accent));
   outline-offset: 0;
 }
 
 .markdown-body pre {
-  background: #030503;
-  border: 1px solid #1a3a28;
+  background: rgb(var(--oli-surface));
+  border: 1px solid rgb(var(--oli-line));
   padding: 0.75rem;
   overflow-x: auto;
 }
 .markdown-body code {
   font-family: inherit;
-  background: #0a120d;
+  background: rgb(var(--oli-elevated));
   padding: 0.1em 0.3em;
 }
 .markdown-body pre code {

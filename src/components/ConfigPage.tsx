@@ -302,19 +302,19 @@ export function ConfigPage() {
   const groups = groupFields(FIELDS);
 
   return (
-    <div className="flex h-full flex-col bg-terminal-bg p-4">
+    <div className="flex h-full flex-col bg-oli-bg p-4">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-terminal-green">config</h2>
+        <h2 className="text-sm font-bold text-oli-accent">config</h2>
         <div className="flex gap-2">
           <button
             onClick={reset}
-            className="flex items-center gap-1 border border-terminal-border px-2 py-1 text-xs text-terminal-muted hover:text-terminal-text"
+            className="flex items-center gap-1 border border-oli-line px-2 py-1 text-xs text-oli-muted hover:text-oli-fg"
           >
             <RotateCcw size={12} /> reset
           </button>
           <button
             onClick={save}
-            className="flex items-center gap-1 border border-terminal-green bg-terminal-panel px-2 py-1 text-xs text-terminal-green hover:bg-terminal-panel-selected"
+            className="flex items-center gap-1 border border-oli-accent bg-oli-elevated px-2 py-1 text-xs text-oli-accent hover:bg-oli-selected"
           >
             <Save size={12} />{" "}
             {saveError ? "save failed" : saved ? "saved!" : "save"}
@@ -322,14 +322,17 @@ export function ConfigPage() {
         </div>
       </div>
 
-      <div className="mb-3 border border-terminal-border bg-terminal-surface px-3 py-2 text-xs text-terminal-muted">
+      <div className="mb-3 border border-oli-line bg-oli-surface px-3 py-2 text-xs text-oli-muted">
         changes are saved to the server and require a restart to take effect.
+        the active agent profile is not set here — click the{" "}
+        <span className="text-oli-fg">:: &lt;profile&gt;</span> chip in the
+        status bar to switch it live.
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {[...groups.entries()].map(([group, fields]) => (
           <div key={group} className="mb-6">
-            <h3 className="mb-2 border-b border-terminal-border-bright pb-1 text-xs font-bold text-terminal-green-dim">
+            <h3 className="mb-2 border-b border-oli-line-strong pb-1 text-xs font-bold text-oli-accent-dim">
               {group}
             </h3>
             <div className="space-y-2">
@@ -338,7 +341,7 @@ export function ConfigPage() {
                   key={field.key}
                   className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3"
                 >
-                  <label className="w-full shrink-0 text-xs text-terminal-muted sm:w-44">
+                  <label className="w-full shrink-0 text-xs text-oli-muted sm:w-44">
                     {field.label}
                   </label>
                   {field.type === "toggle" ? (
@@ -346,8 +349,8 @@ export function ConfigPage() {
                       onClick={() => handleChange(field.key, !draft[field.key])}
                       className={`px-3 py-1 text-xs font-bold border ${
                         draft[field.key]
-                          ? "border-terminal-green bg-terminal-panel text-terminal-green"
-                          : "border-terminal-border bg-terminal-surface text-terminal-muted"
+                          ? "border-oli-accent bg-oli-elevated text-oli-accent"
+                          : "border-oli-line bg-oli-surface text-oli-muted"
                       }`}
                     >
                       {draft[field.key] ? "ON" : "OFF"}
@@ -361,7 +364,7 @@ export function ConfigPage() {
                         setHeadersText(e.target.value);
                       }}
                       rows={3}
-                      className="w-full sm:flex-1 resize-y border border-terminal-border bg-terminal-surface px-2 py-1 font-mono text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
+                      className="w-full sm:flex-1 resize-y border border-oli-line bg-oli-surface px-2 py-1 font-mono text-xs text-oli-fg focus:border-oli-accent focus:outline-none"
                     />
                   ) : field.key === "openai_api_key" ||
                     field.key === "huggingface_api_key" ? (
@@ -369,14 +372,14 @@ export function ConfigPage() {
                       type="password"
                       value={String(draft[field.key])}
                       onChange={(e) => handleChange(field.key, e.target.value)}
-                      className="w-full sm:flex-1 border border-terminal-border bg-terminal-surface px-2 py-1 text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
+                      className="w-full sm:flex-1 border border-oli-line bg-oli-surface px-2 py-1 text-xs text-oli-fg focus:border-oli-accent focus:outline-none"
                     />
                   ) : (
                     <input
                       type={field.type === "number" ? "number" : "text"}
                       value={String(draft[field.key])}
                       onChange={(e) => handleChange(field.key, e.target.value)}
-                      className="w-full sm:flex-1 border border-terminal-border bg-terminal-surface px-2 py-1 text-xs text-terminal-text focus:border-terminal-green focus:outline-none"
+                      className="w-full sm:flex-1 border border-oli-line bg-oli-surface px-2 py-1 text-xs text-oli-fg focus:border-oli-accent focus:outline-none"
                     />
                   )}
                 </div>

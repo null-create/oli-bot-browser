@@ -83,6 +83,16 @@ export type OliView =
   | "mcp"
   | "workspace";
 
+export type ProfileInfo = {
+  name: string;
+  active: boolean;
+  description: string;
+  version: string;
+  default_model_tier: string;
+  allow_tools: string[];
+  deny_tools: string[];
+};
+
 export type MCPServerConfig = {
   name: string;
   transport: "stdio" | "http";
@@ -235,6 +245,7 @@ export const COMMANDS = [
   "/servers",
   "/mode",
   "/profile",
+  "/theme",
   "/context",
   "/mcp",
   "/sessions",

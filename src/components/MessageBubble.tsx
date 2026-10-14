@@ -1,5 +1,5 @@
 import ReactMarkdown from "react-markdown";
-import { User, Bot, AlertTriangle } from "lucide-react";
+import { User, Bot, AlertTriangle, Paperclip } from "lucide-react";
 import { ChatMessage } from "../types";
 
 function fmtTime(ts: number): string {
@@ -58,6 +58,30 @@ export function MessageBubble({
             [ {fmtTime(message.timestamp)} ]
           </span>
         </div>
+        {message.attachments && message.attachments.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {message.attachments.map((a) =>
+              a.kind === "image" ? (
+                <img
+                  key={a.id}
+                  src={a.dataUrl}
+                  alt={a.name}
+                  title={a.name}
+                  className="max-h-24 border border-oli-line"
+                />
+              ) : (
+                <span
+                  key={a.id}
+                  className="flex items-center gap-1 border border-oli-line bg-oli-elevated px-1.5 py-1 text-[10px] text-oli-muted"
+                  title={a.name}
+                >
+                  <Paperclip size={10} className="text-oli-accent" />
+                  <span className="max-w-[12rem] truncate">{a.name}</span>
+                </span>
+              ),
+            )}
+          </div>
+        )}
         <div
           className={`markdown-body mt-1 text-sm leading-relaxed ${
             pending ? "text-oli-accent-bright" : "text-oli-fg"

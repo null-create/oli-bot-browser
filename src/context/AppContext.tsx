@@ -31,6 +31,7 @@ import {
   OliConfig,
   OliEvent,
   OliView,
+  PendingAttachment,
   ProfileInfo,
   Session,
   SubAgentRun,
@@ -39,6 +40,7 @@ import {
   WorkspaceState,
   INITIAL_CONFIG,
 } from "../types";
+import { toWireAttachments } from "../lib/attachments";
 import { THEMES } from "../themes";
 
 type ChatLine = {
@@ -46,6 +48,7 @@ type ChatLine = {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  attachments?: PendingAttachment[];
 };
 
 type AppState = {
@@ -82,7 +85,7 @@ type AppState = {
   removeMcpServer: (name: string) => Promise<boolean>;
   collapseThinking: (open: boolean) => void;
   setView: (view: OliView) => void;
-  sendMessage: (text: string) => void;
+  sendMessage: (text: string, attachments?: PendingAttachment[]) => void;
   runCommand: (text: string) => boolean;
   clearChat: () => void;
   newSession: () => void;
@@ -439,22 +442,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { status, send, clear } = useOliSocket(handleEvent);
 
   const sendMessage = useCallback(
-    (text: string) => {
-      if (!text.trim() || isGenerating) return;
+    (text: string, attachments: PendingAttachment[] = []) => {
+      if ((!text.trim() && attachments.length === 0) || isGenerating) return;
       const userMsg: ChatLine = {
         id: makeId(),
         role: "user",
         content: text,
         timestamp: now(),
+        attachments: attachments.length ? attachments : undefined,
       };
       setMessages((m) => [...m, userMsg]);
       const sid = currentSessionId;
       let autoName = "";
+      const nameSource =
+        text.trim() ||
+        (attachments[0]?.name ? `[${attachments[0].name}]` : "");
       setSessions((prev) =>
         prev.map((s) => {
           if (s.id !== sid) return s;
           if ((s.msgCount ?? 0) === 0 && /^(untitled)?\s*$/i.test(s.name))
-            autoName = text.length > 40 ? text.slice(0, 40) + "\u2026" : text;
+            autoName =
+              nameSource.length > 40
+                ? nameSource.slice(0, 40) + "\u2026"
+                : nameSource;
           return {
             ...s,
             name: autoName || s.name,
@@ -472,7 +482,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPendingText("");
       setPendingThinking("");
       setIsGenerating(true);
-      send({ content: text, session_id: sid });
+      send({
+        content: text,
+        session_id: sid,
+        attachments: toWireAttachments(attachments),
+      });
     },
     [isGenerating, send, currentSessionId],
   );

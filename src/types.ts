@@ -102,6 +102,15 @@ export type MCPServerConfig = {
   url: string;
 };
 
+export type PendingAttachment = {
+  id: string;
+  kind: "image" | "file";
+  name: string;
+  mediaType: string;
+  dataUrl: string;
+  size: number;
+};
+
 export type ChatMessage = {
   id: string;
   role: "user" | "assistant" | "system" | "tool";
@@ -109,6 +118,7 @@ export type ChatMessage = {
   timestamp: number;
   subAgentId?: string;
   agentName?: string;
+  attachments?: PendingAttachment[];
 };
 
 export type ToolCall = {

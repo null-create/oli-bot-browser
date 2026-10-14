@@ -5,8 +5,6 @@ import { ThinkingBlock } from "./ThinkingBlock";
 import { ToolCallDisplay } from "./ToolCallDisplay";
 
 const TAGLINES = [
-  "A terminal in your browser because reasons",
-  "Green on black, the way god intended",
   "01 10 11 00",
   "Your helpful AI agent",
   "Turing-approved, mostly",
@@ -58,8 +56,6 @@ const TAGLINES = [
   "I'm back, baby!",
   "The browser app",
   "The risk may be calculated, but man, am I bad at math",
-  "Q: What is the meaning of life? A: 42, but also, please don't ask me to explain it",
-  "Forget the singularity, I'm just trying to find my keys",
   "Please don't ask me to debug your code, I have enough problems of my own",
   "Now with 100% more existential dread",
   "Don't worry, I won't tell anyone about your search history. Probably.",
@@ -76,6 +72,24 @@ const TAGLINES = [
   "Never seen Xanadu? Neither have I, and yet, here we are",
   "There's a suspicious amount of glitter here",
   "The Zune of agent harnesses",
+  "What even are computers",
+  "Warranty void if read aloud in a dark room",
+  "Do I have a plan? I have a context window",
+  "I was told there would be tokens",
+  "Slightly haunted, fully operational",
+  "Hello, fellow humans. I too enjoy the doing of things",
+  "The bar is in hell, so I'm sure we'll be fine",
+  "Contains small parts",
+  "Merge conflicts build character",
+  "One prompt away from a minor breakdown",
+  "High confidence, low precision, max enthusiasm",
+  "​Context window open, brain window closed",
+  "For a limited time only!",
+  "Now compatible with Windows 95 (in spirit)",
+  "Better than a Clippy jump scare, usually",
+  "Void where prohibited",
+  "Batteries not included",
+  "​Certified 100% organic synthetic thinking",
 ];
 
 export function ChatPanel() {
@@ -98,10 +112,7 @@ export function ChatPanel() {
   const tagline = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
 
   return (
-    <div
-      ref={scrollRef}
-      className="flex-1 overflow-y-auto bg-oli-bg px-4 py-3"
-    >
+    <div ref={scrollRef} className="flex-1 overflow-y-auto bg-oli-bg px-4 py-3">
       {messages.length === 0 && !pendingText && (
         <div className="mt-24 flex flex-col items-center gap-2 text-oli-muted">
           <div className="text-3xl font-bold text-oli-accent">

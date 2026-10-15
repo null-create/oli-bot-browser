@@ -1,8 +1,22 @@
 import { useApp } from "../context/AppContext";
-import { Command, Menu, Terminal } from "lucide-react";
+import {
+  Command,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Terminal,
+} from "lucide-react";
 import { ThemeMenu } from "./ThemeMenu";
 
-export function TopBar({ onMenu }: { onMenu?: () => void }) {
+export function TopBar({
+  onMenu,
+  onToggleSidebar,
+  sidebarCollapsed,
+}: {
+  onMenu?: () => void;
+  onToggleSidebar?: () => void;
+  sidebarCollapsed?: boolean;
+}) {
   const { config } = useApp();
 
   return (
@@ -10,10 +24,23 @@ export function TopBar({ onMenu }: { onMenu?: () => void }) {
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <button
           onClick={onMenu}
-          className="text-oli-accent md:hidden"
+          className="-m-1.5 p-1.5 text-oli-accent md:hidden"
           title="Menu"
         >
-          <Menu size={14} />
+          <Menu size={16} />
+        </button>
+        <button
+          onClick={onToggleSidebar}
+          className="-m-1.5 hidden p-1.5 text-oli-accent hover:text-oli-accent-bright md:flex"
+          title={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+          aria-label={sidebarCollapsed ? "Show sidebar" : "Hide sidebar"}
+          aria-expanded={!sidebarCollapsed}
+        >
+          {sidebarCollapsed ? (
+            <PanelLeftOpen size={16} />
+          ) : (
+            <PanelLeftClose size={16} />
+          )}
         </button>
         <Terminal size={14} />
         <span className="font-bold">oli</span>

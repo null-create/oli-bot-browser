@@ -233,7 +233,7 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
             type="button"
             onClick={() => setShowAttachMenu((o) => !o)}
             disabled={isGenerating}
-            className="flex text-oli-accent hover:text-oli-accent-bright disabled:text-oli-muted"
+            className="-m-0.5 flex p-0.5 text-oli-accent hover:text-oli-accent-bright disabled:text-oli-muted"
             title="Attach a file"
             aria-haspopup="menu"
             aria-expanded={showAttachMenu}
@@ -301,7 +301,7 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
           <button
             onClick={submit}
             disabled={isGenerating}
-            className="mb-1 text-oli-accent hover:text-oli-accent-bright disabled:text-oli-muted"
+            className="mb-0.5 -m-1 p-1 text-oli-accent hover:text-oli-accent-bright disabled:text-oli-muted"
             title="Send"
           >
             <SendHorizonal size={16} />
@@ -310,7 +310,7 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
         {!value.trim() && attachments.length === 0 && (
           <button
             onClick={onClear}
-            className="mb-1 text-oli-muted hover:text-oli-danger"
+            className="mb-0.5 -m-1 p-1 text-oli-muted hover:text-oli-danger"
             title="Clear"
           >
             <Trash2 size={16} />

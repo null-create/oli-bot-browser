@@ -65,12 +65,13 @@ by run.
 
 ```
 src/
-  components/   TopBar, ThemeMenu, StatusBar, Sidebar, ChatPanel, ChatInput,
-                MessageBubble, ThinkingBlock, ToolCallDisplay, SessionList,
-                ConfigPage, SubAgentView, TodoPanel
+  components/   TopBar, ThemeMenu, StatusBar, Sidebar, SidebarResizer, ChatPanel,
+                ChatInput, MessageBubble, ThinkingBlock, ToolCallDisplay,
+                SessionList, ConfigPage, SubAgentView, TodoPanel
   context/      AppContext — global state + WebSocket event reducer
                 ThemeContext — active theme (client-side only)
   hooks/        useOliSocket — auto-reconnecting WebSocket with send/clear
+                useSidebarLayout — sidebar width + collapsed state (localStorage)
   lib/          sessions — REST session client (list/create/get/rename/delete)
   themes.ts     theme ids, labels and copy for the theme menu
 ```
@@ -79,12 +80,17 @@ src/
 
 - Sessions persist server-side on `oli-bot` (shared with the TUI's `ConversationStore`); the browser creates a fresh session on load and per new-session, and each turn is sent with `session_id`. If the backend is unreachable the UI falls back to an ephemeral in-memory session. The chat transcript is never stored in the browser.
 - **Themes** are picked from the swatch menu in the top bar (or `/theme` to
-  list them) and remembered in `localStorage` under `oli-theme` — that key is
-  the only thing the browser persists. There are six: `terminal` (default),
+  list them) and remembered in `localStorage` under `oli-theme`. There are six: `terminal` (default),
   `gemini`, `kid`, `amber`, `synthwave` and `paper`. Switching is entirely
   client-side; no theme is sent to the backend. Palettes live in
   `src/index.css` as `[data-theme="…"]` blocks driving the `oli-*` Tailwind
   tokens, so a new theme is one CSS block plus one entry in `src/themes.ts`.
+- **The left sidebar is resizable and collapsible on desktop** (drag the divider,
+  double-click to reset, or use `←`/`→`/`Home`/`End`/`Enter` when it's focused;
+  the top-bar toggle collapses it). Width and collapsed state persist in
+  `localStorage` under `oli-sidebar-width` and `oli-sidebar-collapsed`. On
+  mobile the sidebar remains a full-width overlay drawer, opened from the
+  top-bar hamburger.
 - Slash commands are handled client-side where they map to UI actions:
   `/clear`, `/config`, `/profile`, `/theme`, `/sessions`, `/todos`,
   `/subagents`, and `/help`. All

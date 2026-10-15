@@ -47,6 +47,7 @@ export default {
       animation: {
         blink: "blink 1s step-end infinite",
         "pulse-accent": "pulse-accent 2s ease-in-out infinite",
+        "slide-in-left": "slide-in-left 0.18s ease-out",
       },
       keyframes: {
         blink: {
@@ -56,6 +57,10 @@ export default {
         "pulse-accent": {
           "0%, 100%": { opacity: "0.4" },
           "50%": { opacity: "1" },
+        },
+        "slide-in-left": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(0)" },
         },
       },
     },

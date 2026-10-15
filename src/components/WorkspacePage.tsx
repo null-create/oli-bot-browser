@@ -321,7 +321,7 @@ export function WorkspacePage() {
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto border border-oli-line bg-oli-surface">
+      <div className="min-h-0 flex-1 overflow-auto border border-oli-line bg-oli-surface">
         {working ? (
           <div className="flex h-full items-center justify-center text-sm text-oli-muted">
             {pendingPath
@@ -329,15 +329,17 @@ export function WorkspacePage() {
               : "loading workspace ..."}
           </div>
         ) : rootEntry ? (
-          <TreeNode
-            key={`${resetKey}-${rootEntry.path}`}
-            entry={rootEntry}
-            depth={0}
-            currentPath={current}
-            loadChildren={loadChildren}
-            onError={setError}
-            onSelect={handleSelect}
-          />
+          <div className="min-w-max">
+            <TreeNode
+              key={`${resetKey}-${rootEntry.path}`}
+              entry={rootEntry}
+              depth={0}
+              currentPath={current}
+              loadChildren={loadChildren}
+              onError={setError}
+              onSelect={handleSelect}
+            />
+          </div>
         ) : null}
       </div>
 

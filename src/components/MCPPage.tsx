@@ -176,20 +176,20 @@ export function MCPPage() {
                   >
                     {cfg.transport}
                   </span>
-                  <span className="ml-auto flex gap-2">
+                  <span className="ml-auto flex gap-1">
                     <button
                       onClick={() => startEdit(cfg)}
-                      className="text-oli-muted hover:text-oli-fg"
+                      className="-m-1 p-1 text-oli-muted hover:text-oli-fg"
                       title="Edit"
                     >
-                      <Pencil size={12} />
+                      <Pencil size={14} />
                     </button>
                     <button
                       onClick={() => remove(cfg.name)}
-                      className="text-oli-muted hover:text-oli-danger"
+                      className="-m-1 p-1 text-oli-muted hover:text-oli-danger"
                       title="Remove"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={14} />
                     </button>
                   </span>
                 </div>

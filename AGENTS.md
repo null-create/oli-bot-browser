@@ -60,12 +60,14 @@ src/
   index.css              Tailwind base, theme palettes, scrollbar/selection rules
   types.ts               OliEvent union, domain types, COMMANDS, INITIAL_CONFIG
   themes.ts              Theme ids, labels, descriptions (menu metadata only)
-  components/            TopBar, ThemeMenu, StatusBar, Sidebar, ChatPanel, ChatInput,
-                         MessageBubble, ThinkingBlock, ToolCallDisplay,
-                         SessionList, ConfigPage, MCPPage, SubAgentView, TodoPanel
+  components/            TopBar, ThemeMenu, StatusBar, Sidebar, SidebarResizer,
+                         ChatPanel, ChatInput, MessageBubble, ThinkingBlock,
+                         ToolCallDisplay, SessionList, ConfigPage, MCPPage,
+                         WorkspacePage, SubAgentView, TodoPanel, ProfileMenu
   context/AppContext.tsx Global state + WebSocket event reducer
   context/ThemeContext.tsx Active theme; applies data-theme, writes localStorage
   hooks/useOliSocket.ts  Auto-reconnecting WebSocket with send/clear helpers
+  hooks/useSidebarLayout.ts Sidebar width + collapsed state, persisted to localStorage
   lib/sessions.ts        REST session client (list/create/get/rename/delete)
 ```
 
@@ -117,6 +119,17 @@ src/
   `src/themes.test.ts` parses the CSS and enforces palette completeness plus
   WCAG contrast floors, so a new theme that is unreadable fails CI rather than
   review. To add a theme: one CSS block, one `themes.ts` entry, one test case.
+- **Layout:** The left `Sidebar` is drag-resizable and collapsible **on desktop
+  only** (`md+`). `useSidebarLayout` owns `width` (clamped
+  `SIDEBAR_MIN_WIDTH`–`SIDEBAR_MAX_WIDTH`) and `collapsed`, persisted in
+  `localStorage` as `oli-sidebar-width` / `oli-sidebar-collapsed` (the width is
+  applied as the `--sidebar-w` CSS variable on the shell). `SidebarResizer`
+  (`role="separator"`) drives it: pointer-drag updates `--sidebar-w`
+  imperatively for smoothness and commits on release, plus arrow/Home/End keys
+  to resize and Enter to collapse; double-click resets. `App.tsx` renders the
+  sidebar + resizer only when expanded and toggles via the `TopBar` button.
+  Mobile keeps the full-width overlay drawer. The shell also applies
+  `env(safe-area-inset-*)` padding so notched devices aren't clipped.
 - **Slash commands:** Handled client-side where they map to UI actions:
   `/clear`, `/config`, `/profile`, `/theme`, `/sessions`, `/todos`, `/subagents`, `/mcp`,
   `/help`. All other commands (`/model`, `/servers`, …) go to the agent as plain

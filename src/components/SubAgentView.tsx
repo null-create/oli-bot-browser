@@ -26,14 +26,14 @@ function RunCard({ run }: { run: SubAgentRun }) {
     <div className="mb-2 border border-oli-line bg-oli-surface">
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-oli-elevated"
+        className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 text-left text-xs hover:bg-oli-elevated"
       >
         {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         <StatusIcon status={run.status} />
         <span className="font-bold text-oli-fg">{run.agent_name}</span>
         <span className="text-oli-muted">::</span>
-        <span className="truncate text-oli-fg">{run.task}</span>
-        <span className="ml-auto shrink-0 text-oli-accent-dim">
+        <span className="min-w-0 flex-1 truncate text-oli-fg">{run.task}</span>
+        <span className="shrink-0 text-oli-accent-dim max-sm:w-full max-sm:text-right">
           {run.activity}
         </span>
       </button>

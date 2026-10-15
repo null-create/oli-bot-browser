@@ -67,11 +67,11 @@ export function ProfileMenu() {
         aria-haspopup="listbox"
         aria-expanded={open}
         title="Select the agent profile"
-        className={`flex items-center gap-0.5 hover:text-oli-fg ${
+        className={`flex min-w-0 items-center gap-0.5 hover:text-oli-fg ${
           open ? "text-oli-accent" : "text-oli-muted"
         } ${busy ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
       >
-        <span>:: {activeName}</span>
+        <span className="truncate">:: {activeName}</span>
         <ChevronDown size={10} className={open ? "rotate-180" : ""} />
       </button>
       {open && (

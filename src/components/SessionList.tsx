@@ -97,26 +97,26 @@ export function SessionList() {
                   {s.name || "untitled"}
                 </span>
               )}
-              <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100">
+              <div className="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     startRename(s.id, s.name);
                   }}
-                  className="text-oli-muted hover:text-oli-accent"
+                  className="-m-1 p-1 text-oli-muted hover:text-oli-accent"
                   title="Rename"
                 >
-                  <Edit3 size={12} />
+                  <Edit3 size={14} />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     removeSession(s.id);
                   }}
-                  className="text-oli-muted hover:text-oli-danger"
+                  className="-m-1 p-1 text-oli-muted hover:text-oli-danger"
                   title="Delete"
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={14} />
                 </button>
               </div>
             </div>

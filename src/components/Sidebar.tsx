@@ -32,7 +32,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   } = useApp();
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-oli-line bg-oli-surface">
+    <div className="flex h-full w-full flex-col border-r border-oli-line bg-oli-surface">
       <div className="flex h-8 items-center justify-between border-b border-oli-line px-2 text-xs text-oli-muted">
         <span className="font-bold text-oli-accent">sessions</span>
         <button
@@ -40,7 +40,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             newSession();
             onNavigate?.();
           }}
-          className="flex items-center gap-1 text-oli-accent hover:text-oli-accent-bright"
+          className="-m-1 flex items-center gap-1 p-1 text-oli-accent hover:text-oli-accent-bright"
           title="New session"
         >
           <Plus size={12} />
@@ -73,7 +73,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               {s.msgCount ?? 0} msg
             </span>
             <button
-              className="ml-1 text-oli-danger sm:hidden sm:group-hover:block"
+              className="ml-1 -my-1 p-1 text-oli-danger sm:hidden sm:group-hover:block"
               title="Delete session"
               onClick={(e) => {
                 e.stopPropagation();

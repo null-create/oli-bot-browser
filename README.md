@@ -40,10 +40,13 @@ npm run preview
 ## Run (Docker)
 
 ```bash
-docker compose up --build # http://localhost:8080
+docker compose up --build # http://localhost:9735
 ```
 
-The container serves the production build from nginx on port 80 and proxies
+The container serves the production build from nginx on port 80, published on
+the host as `0.0.0.0:9735` — so anyone on your LAN can open
+`http://<host-ip>:9735` (the client derives its WebSocket URL from
+`window.location.host`, so no extra configuration is needed). It proxies
 `/v1` (WebSocket) and `/health` to the backend. Point it at your backend with
 `BACKEND_HOST` / `BACKEND_PORT` environment variables — by default it reaches
 `host.docker.internal:9734` (i.e. the `oli-server` running on your host). See

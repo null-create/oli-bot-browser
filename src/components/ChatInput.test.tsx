@@ -1,13 +1,12 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { sendMessage, runCommand } = vi.hoisted(() => ({
+const { sendMessage } = vi.hoisted(() => ({
   sendMessage: vi.fn(),
-  runCommand: vi.fn(() => false),
 }));
 
 vi.mock("../context/AppContext", () => ({
-  useApp: () => ({ sendMessage, runCommand, isGenerating: false }),
+  useApp: () => ({ sendMessage, isGenerating: false }),
 }));
 
 import { ChatInput } from "./ChatInput";
@@ -27,8 +26,6 @@ function attachFile(name: string, type: string, content: BlobPart = "x") {
 describe("ChatInput attachments", () => {
   beforeEach(() => {
     sendMessage.mockClear();
-    runCommand.mockClear();
-    runCommand.mockReturnValue(false);
     vi.stubGlobal(
       "matchMedia",
       vi.fn().mockReturnValue({
@@ -108,15 +105,13 @@ describe("ChatInput attachments", () => {
     await waitFor(() => expect(screen.queryByText("notes.txt")).toBeNull());
   });
 
-  it("routes a slash command instead of sending when no attachments", () => {
-    runCommand.mockReturnValue(true);
+  it("sends a slash-prefixed message to the agent", () => {
     renderInput();
     fireEvent.change(screen.getByRole("textbox"), {
       target: { value: "/clear" },
     });
     fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
 
-    expect(runCommand).toHaveBeenCalledWith("/clear");
-    expect(sendMessage).not.toHaveBeenCalled();
+    expect(sendMessage).toHaveBeenCalledWith("/clear", []);
   });
 });

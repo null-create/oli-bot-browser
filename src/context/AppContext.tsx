@@ -41,7 +41,6 @@ import {
   INITIAL_CONFIG,
 } from "../types";
 import { toWireAttachments } from "../lib/attachments";
-import { THEMES } from "../themes";
 
 type ChatLine = {
   id: string;
@@ -86,7 +85,6 @@ type AppState = {
   collapseThinking: (open: boolean) => void;
   setView: (view: OliView) => void;
   sendMessage: (text: string, attachments?: PendingAttachment[]) => void;
-  runCommand: (text: string) => boolean;
   clearChat: () => void;
   newSession: () => void;
   switchSession: (id: string) => void;
@@ -539,85 +537,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [clearChat],
   );
 
-  const runCommand = useCallback(
-    (text: string): boolean => {
-      const trimmed = text.trim();
-      if (!trimmed.startsWith("/")) return false;
-      const cmd = trimmed.split(/\s+/)[0].toLowerCase();
-      switch (cmd) {
-        case "/clear":
-          clearChat();
-          return true;
-        case "/config":
-          setView("config");
-          return true;
-        case "/profile":
-          setView("chat");
-          fetchProfiles();
-          return true;
-        case "/theme": {
-          setMessages((m) => [
-            ...m,
-            {
-              id: makeId(),
-              role: "assistant",
-              timestamp: now(),
-              content:
-                "**themes**\n\n" +
-                THEMES.map((t) => `- \`${t.id}\` — ${t.description}`).join("\n") +
-                "\n\nPick one from the theme menu in the top bar; the choice is " +
-                "remembered on this device.",
-            },
-          ]);
-          return true;
-        }
-        case "/sessions":
-          setView("sessions");
-          return true;
-        case "/todos":
-          setView("todos");
-          return true;
-        case "/subagents":
-          setView("subagents");
-          return true;
-        case "/mcp":
-          setView("mcp");
-          fetchMcpServers();
-          return true;
-        case "/workspace":
-          setView("workspace");
-          fetchWorkspace();
-          return true;
-        case "/help": {
-          setMessages((m) => [
-            ...m,
-            {
-              id: makeId(),
-              role: "assistant",
-              timestamp: now(),
-              content:
-                "**oli commands**\n\n" +
-                "- `/clear` — clear the conversation\n" +
-                "- `/config` — open the config view\n" +
-                "- `/profile` — pick the agent profile (also the profile chip in the status bar)\n" +
-                "- `/theme` — list the colour themes (also the theme menu in the top bar)\n" +
-                "- `/sessions` — open the sessions view\n" +
-                "- `/todos` — open the to-do view\n" +
-                "- `/subagents` — open the sub-agents view\n" +
-                "- `/workspace` — open the workspace view\n" +
-                "- `/mcp` — open the MCP server configuration view\n\n" +
-                "Any other command (`/model`, `/servers`, …) is sent to the agent.",
-            },
-          ]);
-          return true;
-        }
-        default:
-          return false;
-      }
-    },
-    [clearChat, fetchProfiles],
-  );
-
   const newSession = useCallback(async () => {
     try {
       const fresh = await createSession();
@@ -903,7 +822,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       collapseThinking: setThinkingOpen,
       setView,
       sendMessage,
-      runCommand,
       clearChat,
       newSession,
       switchSession,
@@ -942,7 +860,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateMcpServer,
       removeMcpServer,
       sendMessage,
-      runCommand,
       clearChat,
       newSession,
       switchSession,

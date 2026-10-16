@@ -7,7 +7,7 @@ import {
   KeyboardEvent,
 } from "react";
 import { useApp } from "../context/AppContext";
-import { COMMANDS, PendingAttachment } from "../types";
+import { PendingAttachment } from "../types";
 import {
   fileToAttachment,
   MAX_ATTACHMENTS,
@@ -15,53 +15,21 @@ import {
 import { SendHorizonal, Trash2, Plus, FileText, X } from "lucide-react";
 
 export function ChatInput({ onClear }: { onClear: () => void }) {
-  const { sendMessage, isGenerating, runCommand } = useApp();
+  const { sendMessage, isGenerating } = useApp();
   const [value, setValue] = useState("");
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [attachError, setAttachError] = useState<string | null>(null);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [selectedIdx, setSelectedIdx] = useState(-1);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
   const attachMenuRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!value.startsWith("/") || value.includes(" ")) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
-    const filtered = COMMANDS.filter((c) => c.startsWith(value.toLowerCase()));
-    setSuggestions(filtered);
-    setShowSuggestions(filtered.length > 0 && value.length > 0);
-    setSelectedIdx(-1);
-  }, [value]);
 
   useEffect(() => {
     if (window.matchMedia("(pointer: fine)").matches) {
       inputRef.current?.focus();
     }
   }, []);
-
-  useEffect(() => {
-    if (!showSuggestions) return;
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(e.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(e.target as Node)
-      ) {
-        setShowSuggestions(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showSuggestions]);
 
   useEffect(() => {
     if (!showAttachMenu) return;
@@ -114,47 +82,14 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
     const text = value.trim();
     const hasAttachments = attachments.length > 0;
     if ((!text && !hasAttachments) || isGenerating) return;
-    if (!hasAttachments && runCommand(text)) {
-      setValue("");
-      setShowSuggestions(false);
-      inputRef.current?.focus();
-      return;
-    }
     sendMessage(text, attachments);
     setValue("");
     setAttachments([]);
     setAttachError(null);
-    setShowSuggestions(false);
     inputRef.current?.focus();
-  }, [value, attachments, isGenerating, sendMessage, runCommand]);
+  }, [value, attachments, isGenerating, sendMessage]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (showSuggestions && suggestions.length > 0) {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIdx((i) => (i + 1) % suggestions.length);
-        return;
-      }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIdx((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
-        return;
-      }
-      if (e.key === "Enter" && selectedIdx >= 0) {
-        e.preventDefault();
-        setValue(suggestions[selectedIdx] + " ");
-        setShowSuggestions(false);
-        setSelectedIdx(-1);
-        inputRef.current?.focus();
-        return;
-      }
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setShowSuggestions(false);
-        return;
-      }
-    }
-
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       submit();
@@ -163,32 +98,6 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
 
   return (
     <div className="relative border-t border-oli-line bg-oli-surface">
-      {showSuggestions && suggestions.length > 0 && (
-        <div
-          ref={suggestionsRef}
-          className="absolute bottom-full left-0 z-50 max-h-48 w-full overflow-y-auto border border-oli-line-strong bg-oli-elevated shadow-lg"
-        >
-          {suggestions.map((cmd, i) => (
-            <div
-              key={cmd}
-              className={`cursor-pointer px-3 py-1.5 text-xs ${
-                i === selectedIdx
-                  ? "bg-oli-selected text-oli-accent"
-                  : "text-oli-muted hover:bg-oli-elevated hover:text-oli-fg"
-              }`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                setValue(cmd + " ");
-                setShowSuggestions(false);
-                inputRef.current?.focus();
-              }}
-            >
-              <span className="font-bold text-oli-accent">{cmd}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
       {(attachments.length > 0 || attachError) && (
         <div className="flex flex-wrap items-center gap-2 border-b border-oli-line px-2 py-1.5">
           {attachments.map((a) => (

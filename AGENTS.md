@@ -58,7 +58,7 @@ src/
   main.tsx               ReactDOM entry (StrictMode)
   App.tsx                Shell: TopBar / Sidebar / MainView / StatusBar
   index.css              Tailwind base, theme palettes, scrollbar/selection rules
-  types.ts               OliEvent union, domain types, COMMANDS, INITIAL_CONFIG
+  types.ts               OliEvent union, domain types, INITIAL_CONFIG
   themes.ts              Theme ids, labels, descriptions (menu metadata only)
   components/            TopBar, ThemeMenu, StatusBar, Sidebar, SidebarResizer,
                          ChatPanel, ChatInput, MessageBubble, ThinkingBlock,
@@ -115,7 +115,7 @@ src/
   live in `src/index.css` as `[data-theme="…"]` blocks that set the `--oli-*`
   custom properties, which `tailwind.config.js` wires into the `oli-*` colour
   tokens — so the same component classes retint with no per-theme code. Labels
-  and copy live in `src/themes.ts`. `/theme` lists the available ids.
+  and copy live in `src/themes.ts`.
   `src/themes.test.ts` parses the CSS and enforces palette completeness plus
   WCAG contrast floors, so a new theme that is unreadable fails CI rather than
   review. To add a theme: one CSS block, one `themes.ts` entry, one test case.
@@ -130,10 +130,6 @@ src/
   sidebar + resizer only when expanded and toggles via the `TopBar` button.
   Mobile keeps the full-width overlay drawer. The shell also applies
   `env(safe-area-inset-*)` padding so notched devices aren't clipped.
-- **Slash commands:** Handled client-side where they map to UI actions:
-  `/clear`, `/config`, `/profile`, `/theme`, `/sessions`, `/todos`, `/subagents`, `/mcp`,
-  `/help`. All other commands (`/model`, `/servers`, …) go to the agent as plain
-  messages.
 
 ## Conventions
 

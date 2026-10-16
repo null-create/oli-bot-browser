@@ -246,26 +246,6 @@ export type OliConfig = {
   api_mode: string;
 };
 
-export const COMMANDS = [
-  "/help",
-  "/clear",
-  "/models",
-  "/model",
-  "/config",
-  "/servers",
-  "/mode",
-  "/profile",
-  "/theme",
-  "/context",
-  "/mcp",
-  "/sessions",
-  "/workspace",
-  "/home",
-  "/offline",
-  "/dry-run",
-  "/voice",
-] as const;
-
 export const INITIAL_CONFIG: OliConfig = {
   backend: "ollama",
   openai_api_key: "",

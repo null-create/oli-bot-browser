@@ -6,15 +6,17 @@ themes, React + TypeScript + Tailwind + Vite. Talks to the `oli-server`
 WebSocket at `/v1/chat` for real-time streaming (text, thinking, tool calls,
 sub-agents, token usage, todos).
 
+![screen_shot_example](/assets/example.PNG)
+
 ## Views
 
-| View          | Purpose                                                                                                         |
-| ------------- | --------------------------------------------------------------------------------------------------------------- |
+| View          | Purpose                                                                             |
+| ------------- | ----------------------------------------------------------------------------------- |
 | **chat**      | Streaming transcript (markdown), collapsible thinking blocks, live tool-call chips. |
-| **sessions**  | server-backed session list — search, switch, rename, delete.                                                   |
-| **todos**     | Live `todowrite` list with status/priority breakdown.                                                           |
-| **subagents** | Per-run timeline of delegated sub-agents (activity, tool calls, messages).                                      |
-| **config**    | Editable runtime config (backend, models, API keys, agent flags).                                               |
+| **sessions**  | server-backed session list — search, switch, rename, delete.                        |
+| **todos**     | Live `todowrite` list with status/priority breakdown.                               |
+| **subagents** | Per-run timeline of delegated sub-agents (activity, tool calls, messages).          |
+| **config**    | Editable runtime config (backend, models, API keys, agent flags).                   |
 
 ## Run (local dev)
 

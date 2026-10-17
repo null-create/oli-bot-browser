@@ -6,7 +6,7 @@ themes, React + TypeScript + Tailwind + Vite. Talks to the `oli-server`
 WebSocket at `/v1/chat` for real-time streaming (text, thinking, tool calls,
 sub-agents, token usage, todos).
 
-![screen_shot_example](/assets/example.PNG)
+![screen_shot_example](/docs/assets/example.PNG)
 
 ## Views
 

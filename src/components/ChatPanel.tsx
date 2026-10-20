@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { MessageBubble } from "./MessageBubble";
 import { ThinkingBlock } from "./ThinkingBlock";
 import { ToolCallDisplay } from "./ToolCallDisplay";
+import { TurnActivityBlock } from "./TurnActivityBlock";
 
 const TAGLINES = [
   "01 10 11 00",
@@ -95,25 +96,50 @@ const TAGLINES = [
 export function ChatPanel() {
   const {
     messages,
-    pendingText,
-    pendingThinking,
+    liveSegments,
     thinkingOpen,
     collapseThinking,
-    toolCalls,
     isGenerating,
   } = useApp();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const stickToBottom = useRef(true);
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, pendingText, pendingThinking, toolCalls]);
+  };
+
+  useEffect(() => {
+    if (stickToBottom.current) scrollToBottom();
+  }, [messages, liveSegments, isGenerating]);
+
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (last?.role === "user") {
+      stickToBottom.current = true;
+      scrollToBottom();
+    }
+  }, [messages]);
+
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    stickToBottom.current =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+  };
 
   const tagline = TAGLINES[Math.floor(Math.random() * TAGLINES.length)];
+  const hasLiveText = liveSegments.some(
+    (segment) => segment.kind === "text" && segment.text.trim() !== "",
+  );
 
   return (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto bg-oli-bg px-4 py-3">
-      {messages.length === 0 && !pendingText && (
+    <div
+      ref={scrollRef}
+      onScroll={handleScroll}
+      className="flex-1 overflow-y-auto bg-oli-bg px-4 py-3"
+    >
+      {messages.length === 0 && liveSegments.length === 0 && (
         <div className="mt-24 flex flex-col items-center gap-2 text-oli-muted">
           <div className="text-3xl font-bold text-oli-accent">
             <span className="animate-pulse-accent">{">"}</span>_ oli
@@ -123,34 +149,41 @@ export function ChatPanel() {
       )}
 
       {messages.map((m) => (
-        <MessageBubble key={m.id} message={m} />
+        <Fragment key={m.id}>
+          {m.activity && <TurnActivityBlock activity={m.activity} />}
+          <MessageBubble message={m} />
+        </Fragment>
       ))}
 
-      {pendingThinking && (
-        <ThinkingBlock
-          text={pendingThinking}
-          open={thinkingOpen}
-          onToggle={() => collapseThinking(!thinkingOpen)}
-        />
-      )}
+      {liveSegments.map((segment) => {
+        if (segment.kind === "thinking") {
+          return (
+            <ThinkingBlock
+              key={segment.id}
+              text={segment.text}
+              open={thinkingOpen}
+              onToggle={() => collapseThinking(!thinkingOpen)}
+            />
+          );
+        }
+        if (segment.kind === "tool") {
+          return <ToolCallDisplay key={segment.id} call={segment.call} />;
+        }
+        return (
+          <MessageBubble
+            key={segment.id}
+            message={{
+              id: segment.id,
+              role: "assistant",
+              content: segment.text,
+              timestamp: segment.timestamp,
+            }}
+            pending
+          />
+        );
+      })}
 
-      {toolCalls.map((call) => (
-        <ToolCallDisplay key={call.id} call={call} />
-      ))}
-
-      {pendingText && (
-        <MessageBubble
-          message={{
-            id: "pending",
-            role: "assistant",
-            content: pendingText,
-            timestamp: Date.now(),
-          }}
-          pending
-        />
-      )}
-
-      {isGenerating && !pendingText && (
+      {isGenerating && !hasLiveText && (
         <div className="flex items-center gap-1 px-2 py-1 text-xs text-oli-accent-dim">
           <span className="inline-block h-2 w-2 animate-blink bg-oli-accent" />
           <span>working</span>

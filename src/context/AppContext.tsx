@@ -27,6 +27,7 @@ import {
   selectProfile as selectProfileApi,
 } from "../lib/profiles";
 import {
+  LiveSegment,
   MCPServerConfig,
   OliConfig,
   OliEvent,
@@ -37,10 +38,20 @@ import {
   SubAgentRun,
   TodoItem,
   ToolCall,
+  TurnActivity,
   WorkspaceState,
   INITIAL_CONFIG,
 } from "../types";
 import { toWireAttachments } from "../lib/attachments";
+import {
+  addTool,
+  appendText,
+  appendThinking,
+  collectActivity,
+  collectText,
+  sealText,
+  setToolResult,
+} from "../lib/liveTurn";
 
 type ChatLine = {
   id: string;
@@ -48,17 +59,16 @@ type ChatLine = {
   content: string;
   timestamp: number;
   attachments?: PendingAttachment[];
+  activity?: TurnActivity;
 };
 
 type AppState = {
   view: OliView;
   status: WsStatus;
   messages: ChatLine[];
-  pendingText: string;
-  pendingThinking: string;
+  liveSegments: LiveSegment[];
   thinkingOpen: boolean;
   isGenerating: boolean;
-  toolCalls: ToolCall[];
   sessions: Session[];
   currentSessionId: string;
   subAgents: SubAgentRun[];
@@ -123,11 +133,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const currentSessionIdRef = useRef<string>(currentSessionId);
   currentSessionIdRef.current = currentSessionId;
   const [messages, setMessages] = useState<ChatLine[]>([]);
-  const [pendingText, setPendingText] = useState("");
-  const [pendingThinking, setPendingThinking] = useState("");
+  const [liveSegments, setLiveSegments] = useState<LiveSegment[]>([]);
   const [thinkingOpen, setThinkingOpen] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
   const [subAgents, setSubAgents] = useState<SubAgentRun[]>([]);
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [mcpServers, setMcpServers] = useState<MCPServerConfig[]>([]);
@@ -141,8 +149,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
   const [config, setConfig] = useState<OliConfig>(INITIAL_CONFIG);
 
-  const pendingTextRef = useRef("");
+  const liveSegmentsRef = useRef<LiveSegment[]>([]);
   const activeToolIds = useRef<string[]>([]);
+  const turnStartedAtRef = useRef(0);
+
+  const updateSegments = useCallback(
+    (update: (prev: LiveSegment[]) => LiveSegment[]) => {
+      const next = update(liveSegmentsRef.current);
+      liveSegmentsRef.current = next;
+      setLiveSegments(next);
+    },
+    [],
+  );
+
+  const clearLive = useCallback(() => {
+    liveSegmentsRef.current = [];
+    setLiveSegments([]);
+  }, []);
+
+  const commitAssistantLine = useCallback(
+    (content: string, activity?: TurnActivity) => {
+      if (!content) return;
+      const line: ChatLine = {
+        id: makeId(),
+        role: "assistant",
+        content,
+        timestamp: now(),
+        activity,
+      };
+      setMessages((m) => [...m, line]);
+      const sid = currentSessionIdRef.current;
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === sid
+            ? {
+                ...s,
+                messages: [...s.messages, line],
+                msgCount: (s.msgCount ?? 0) + 1,
+                updatedAt: new Date().toISOString(),
+              }
+            : s,
+        ),
+      );
+    },
+    [],
+  );
 
   const handleEvent = useCallback((ev: OliEvent) => {
     switch (ev.type) {
@@ -175,8 +226,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return;
         }
         setIsGenerating(true);
-        pendingTextRef.current += ev.data.text;
-        setPendingText(pendingTextRef.current);
+        updateSegments((prev) => appendText(prev, ev.data.text));
         setThinkingOpen(false);
         return;
       }
@@ -190,7 +240,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           );
           return;
         }
-        setPendingThinking((t) => t + ev.data.text);
+        updateSegments((prev) => appendThinking(prev, ev.data.text));
         return;
       }
       case "tool_call_executing": {
@@ -226,7 +276,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             startTime: now(),
           };
           activeToolIds.current.push(call.id);
-          setToolCalls((prev) => [...prev, call]);
+          updateSegments((prev) => addTool(prev, call));
         }
         return;
       }
@@ -257,16 +307,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const id = activeToolIds.current.shift();
           if (id !== undefined) {
             const finishedAt = now();
-            setToolCalls((prev) =>
-              prev.map((c) =>
-                c.id === id
-                  ? {
-                      ...c,
-                      result: ev.data.result,
-                      elapsed: (finishedAt - c.startTime) / 1000,
-                    }
-                  : c,
-              ),
+            updateSegments((prev) =>
+              setToolResult(prev, id, ev.data.result, finishedAt),
             );
           }
         }
@@ -282,10 +324,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           );
           return;
         }
-        if (ev.data.content && !pendingTextRef.current) {
-          pendingTextRef.current = ev.data.content;
-          setPendingText(pendingTextRef.current);
-        }
+        updateSegments((prev) => {
+          const last = prev[prev.length - 1];
+          const streamed =
+            last?.kind === "text" && last.text.trim() !== "" ? prev : null;
+          return sealText(
+            streamed ?? appendText(prev, ev.data.content ?? ""),
+          );
+        });
         return;
       }
       case "usage": {
@@ -306,49 +352,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
             content: `\u2717 ${ev.data.message}`,
           },
         ]);
-        pendingTextRef.current = "";
-        setPendingText("");
+        clearLive();
+        activeToolIds.current = [];
         setIsGenerating(false);
         return;
       }
       case "done": {
-        if (ev.data.full_text) {
-          const text =
-            pendingTextRef.current &&
-            pendingTextRef.current !== ev.data.full_text
-              ? pendingTextRef.current + ev.data.full_text
-              : ev.data.full_text;
-          const line: ChatLine = {
-            id: makeId(),
-            role: "assistant",
-            content: text,
-            timestamp: now(),
-          };
-          setMessages((m) => [...m, line]);
-          const sid = currentSessionIdRef.current;
-          setSessions((prev) =>
-            prev.map((s) =>
-              s.id === sid
-                ? {
-                    ...s,
-                    messages: [...s.messages, line],
-                    msgCount: (s.msgCount ?? 0) + 1,
-                    updatedAt: new Date().toISOString(),
-                  }
-                : s,
-            ),
+        const segments = liveSegmentsRef.current;
+        const texts = collectText(segments);
+        if (texts.length === 0 && ev.data.full_text) {
+          texts.push(ev.data.full_text);
+        }
+        const elapsed = turnStartedAtRef.current
+          ? (now() - turnStartedAtRef.current) / 1000
+          : undefined;
+        const activity = collectActivity(segments, elapsed);
+        texts.forEach((text, index) => {
+          commitAssistantLine(
+            text,
+            index === texts.length - 1 ? activity : undefined,
           );
+        });
+        clearLive();
+        setThinkingOpen(true);
+        activeToolIds.current = [];
+        setIsGenerating(false);
+        if (texts.length > 0) {
           listSessions()
             .then(setSessions)
             .catch(() => {});
         }
-        pendingTextRef.current = "";
-        setPendingText("");
-        setPendingThinking("");
-        setThinkingOpen(true);
-        activeToolIds.current = [];
-        setToolCalls((prev) => prev.filter((c) => c.result !== undefined));
-        setIsGenerating(false);
         return;
       }
       case "session_created": {
@@ -363,13 +396,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       case "cleared": {
         setMessages([]);
-        pendingTextRef.current = "";
-        setPendingText("");
-        setPendingThinking("");
+        clearLive();
         setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
         setIsGenerating(false);
         activeToolIds.current = [];
-        setToolCalls([]);
         const sid = currentSessionIdRef.current;
         setSessions((prev) =>
           prev.map((s) =>
@@ -435,7 +465,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       default:
         return;
     }
-  }, []);
+  }, [updateSegments, clearLive, commitAssistantLine]);
 
   const { status, send, clear } = useOliSocket(handleEvent);
 
@@ -476,9 +506,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         renameSession(sid, autoName).catch((e) =>
           console.error("Failed to auto-name session", e),
         );
-      pendingTextRef.current = "";
-      setPendingText("");
-      setPendingThinking("");
+      clearLive();
+      activeToolIds.current = [];
+      turnStartedAtRef.current = now();
       setIsGenerating(true);
       send({
         content: text,
@@ -486,22 +516,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         attachments: toWireAttachments(attachments),
       });
     },
-    [isGenerating, send, currentSessionId],
+    [isGenerating, send, currentSessionId, clearLive],
   );
 
   const clearChat = useCallback(() => {
     setMessages([]);
-    pendingTextRef.current = "";
-    setPendingText("");
-    setPendingThinking("");
+    clearLive();
     setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
     activeToolIds.current = [];
-    setToolCalls([]);
     setSessions((prev) =>
       prev.map((s) => (s.id === currentSessionId ? { ...s, messages: [] } : s)),
     );
     clear(currentSessionId);
-  }, [clear, currentSessionId]);
+  }, [clear, currentSessionId, clearLive]);
 
   const fetchProfiles = useCallback(async () => {
     try {
@@ -543,33 +570,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSessions((prev) => [fresh, ...prev]);
       setCurrentSessionId(fresh.id);
       setMessages([]);
-      pendingTextRef.current = "";
-      setPendingText("");
-      setPendingThinking("");
+      clearLive();
       setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
       activeToolIds.current = [];
-      setToolCalls([]);
     } catch (e) {
       console.error("Failed to create session", e);
     }
-  }, []);
+  }, [clearLive]);
 
   const switchSession = useCallback(async (id: string) => {
     setCurrentSessionId(id);
     setMessages([]);
-    pendingTextRef.current = "";
-    setPendingText("");
-    setPendingThinking("");
+    clearLive();
     setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
     activeToolIds.current = [];
-    setToolCalls([]);
     try {
       const s = await getSession(id);
       setMessages(visibleLines(s));
     } catch (e) {
       console.error("Failed to load session", e);
     }
-  }, []);
+  }, [clearLive]);
 
   const removeSession = useCallback(
     async (id: string) => {
@@ -595,9 +616,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         setCurrentSessionId(next.id);
         setMessages(visibleLines(next));
+        clearLive();
+        activeToolIds.current = [];
+        setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
       }
     },
-    [currentSessionId, sessions],
+    [currentSessionId, sessions, clearLive],
   );
 
   const renameCurrentSession = useCallback(
@@ -795,11 +819,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       view,
       status,
       messages,
-      pendingText,
-      pendingThinking,
+      liveSegments,
       thinkingOpen,
       isGenerating,
-      toolCalls,
       sessions,
       currentSessionId,
       subAgents,
@@ -835,11 +857,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       view,
       status,
       messages,
-      pendingText,
-      pendingThinking,
+      liveSegments,
       thinkingOpen,
       isGenerating,
-      toolCalls,
       sessions,
       currentSessionId,
       subAgents,

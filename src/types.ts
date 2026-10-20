@@ -93,6 +93,30 @@ export type ProfileInfo = {
   deny_tools: string[];
 };
 
+export type AgentBackendInfo = {
+  type: "openai" | "ollama" | "huggingface" | "transformers" | string;
+  model: string | null;
+  base_url: string | null;
+  api_key: "set" | "unset";
+};
+
+export type AgentInfo = {
+  name: string;
+  profile: string;
+  backend: AgentBackendInfo;
+};
+
+export type AgentPoolInfo = {
+  name: string;
+  agents: AgentInfo[];
+};
+
+export type AgentPoolConfig = {
+  enabled: boolean;
+  source: string | null;
+  pools: AgentPoolInfo[];
+};
+
 export type MCPServerConfig = {
   name: string;
   transport: "stdio" | "http";
@@ -245,6 +269,8 @@ export type OliConfig = {
   api_profile: string;
   api_mode: string;
 };
+
+
 
 export const INITIAL_CONFIG: OliConfig = {
   backend: "ollama",

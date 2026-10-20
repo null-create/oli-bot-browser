@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { ToolCallDisplay } from "./ToolCallDisplay";
+import { AgentPoolConfigView } from "./AgentPoolConfigView";
+
+type Tab = "runs" | "config";
 
 function StatusIcon({ status }: { status: SubAgentRun["status"] }) {
   if (status === "running")
@@ -79,7 +82,7 @@ function RunCard({ run }: { run: SubAgentRun }) {
   );
 }
 
-export function SubAgentView() {
+function RunsView() {
   const { subAgents } = useApp();
 
   if (subAgents.length === 0) {
@@ -92,7 +95,6 @@ export function SubAgentView() {
 
   return (
     <div className="flex h-full flex-col bg-oli-bg p-4">
-      <h2 className="mb-3 text-sm font-bold text-oli-accent">sub-agents</h2>
       <div className="flex-1 overflow-y-auto">
         {subAgents.map((run) => (
           <RunCard key={run.task_id} run={run} />
@@ -101,3 +103,38 @@ export function SubAgentView() {
     </div>
   );
 }
+
+export function SubAgentView() {
+  const [tab, setTab] = useState<Tab>("runs");
+
+  return (
+    <div className="flex h-full flex-col bg-oli-bg">
+      <div className="flex items-center border-b border-oli-line bg-oli-surface">
+        <button
+          onClick={() => setTab("runs")}
+          className={`px-3 py-1.5 text-xs font-bold border-r border-oli-line ${
+            tab === "runs"
+              ? "bg-oli-elevated text-oli-accent"
+              : "text-oli-muted hover:bg-oli-elevated hover:text-oli-fg"
+          }`}
+        >
+          runs
+        </button>
+        <button
+          onClick={() => setTab("config")}
+          className={`px-3 py-1.5 text-xs font-bold ${
+            tab === "config"
+              ? "bg-oli-elevated text-oli-accent"
+              : "text-oli-muted hover:bg-oli-elevated hover:text-oli-fg"
+          }`}
+        >
+          config
+        </button>
+      </div>
+      <div className="min-h-0 flex-1">
+        {tab === "runs" ? <RunsView /> : <AgentPoolConfigView />}
+      </div>
+    </div>
+  );
+}
+

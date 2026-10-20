@@ -143,6 +143,7 @@ export type ChatMessage = {
   subAgentId?: string;
   agentName?: string;
   attachments?: PendingAttachment[];
+  activity?: TurnActivity;
 };
 
 export type ToolCall = {
@@ -153,6 +154,23 @@ export type ToolCall = {
   result?: string;
   elapsed?: number;
 };
+
+export type TurnActivity = {
+  toolCalls: ToolCall[];
+  thinking: string;
+  elapsed?: number;
+};
+
+export type LiveSegment =
+  | { kind: "thinking"; id: string; text: string }
+  | {
+      kind: "text";
+      id: string;
+      text: string;
+      timestamp: number;
+      sealed?: boolean;
+    }
+  | { kind: "tool"; id: string; call: ToolCall };
 
 export type SubAgentRun = {
   task_id: string;

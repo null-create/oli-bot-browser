@@ -64,6 +64,7 @@ src/
                          ChatPanel, ChatInput, MessageBubble, ThinkingBlock,
                          ToolCallDisplay, SessionList, ConfigPage, MCPPage,
                          WorkspacePage, SubAgentView, TodoPanel, ProfileMenu
+  components/configFields.ts FIELDS metadata (key/label/type/group) for ConfigPage
   context/AppContext.tsx Global state + WebSocket event reducer
   context/ThemeContext.tsx Active theme; applies data-theme, writes localStorage
   hooks/useOliSocket.ts  Auto-reconnecting WebSocket with send/clear helpers
@@ -96,7 +97,10 @@ src/
   in-memory session.
 - **Config:** The Config view edits an in-memory React state object seeded from
   `INITIAL_CONFIG` in `src/types.ts`; it round-trips to the server over
-  `GET/PUT /v1/config`. MCP server config is a separate list (`src/types.ts`
+  `GET/PUT /v1/config`. `OliConfig` mirrors the backend's flat key set one
+  field per `settings.json` leaf, and every key must have a row in `FIELDS`
+  (`src/components/configFields.ts`, grouped into sections) — `ConfigPage.test.tsx`
+  fails if the two drift. MCP server config is a separate list (`src/types.ts`
   `MCPServerConfig`) managed over `GET/POST /v1/mcp`, `PUT/DELETE /v1/mcp/{name}`
   and driven from `AppContext` (`mcpServers` + CRUD helpers), rendered by
   `MCPPage.tsx`.

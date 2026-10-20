@@ -243,9 +243,11 @@ export type OliConfig = {
   openai_small_model: string;
   openai_vision_style: string;
   openai_optional_headers: Record<string, unknown>;
+  openai_responses_enabled: boolean;
   ollama_base_url: string;
   ollama_model: string;
   ollama_small_model: string;
+  ollama_context_window: number;
   huggingface_base_url: string;
   huggingface_api_key: string;
   huggingface_model: string;
@@ -271,13 +273,16 @@ export type OliConfig = {
   max_messages: number;
   max_tool_iterations: number;
   stream_timeout: number;
+  first_chunk_timeout: number;
   model_filters: string;
   truncation_max_chars_small: number;
   truncation_max_chars_large: number;
   dry_run: boolean;
   offline_mode: boolean;
+  use_oauth: boolean;
   use_agent_pool: boolean;
   agent_pool_size: number;
+  agents_yaml: string;
   log_level: string;
   log_file: string;
   profiles_dir: string;
@@ -286,6 +291,10 @@ export type OliConfig = {
   api_port: number;
   api_profile: string;
   api_mode: string;
+  default_profile: string;
+  session_auto_save: boolean;
+  session_resume_prompt: boolean;
+  workspace_max_workspaces: number;
 };
 
 
@@ -298,9 +307,11 @@ export const INITIAL_CONFIG: OliConfig = {
   openai_small_model: "",
   openai_vision_style: "openai",
   openai_optional_headers: {},
+  openai_responses_enabled: false,
   ollama_base_url: "http://localhost:11434",
   ollama_model: "",
   ollama_small_model: "",
+  ollama_context_window: 8192,
   huggingface_base_url: "https://api-inference.huggingface.co",
   huggingface_api_key: "",
   huggingface_model: "",
@@ -326,13 +337,16 @@ export const INITIAL_CONFIG: OliConfig = {
   max_messages: 100,
   max_tool_iterations: 25,
   stream_timeout: 240.0,
+  first_chunk_timeout: 600.0,
   model_filters: "",
   truncation_max_chars_small: 4000,
   truncation_max_chars_large: 100000,
   dry_run: false,
   offline_mode: true,
+  use_oauth: false,
   use_agent_pool: false,
   agent_pool_size: 5,
+  agents_yaml: "",
   log_level: "INFO",
   log_file: "logs/backend.ndjson",
   profiles_dir: "profiles",
@@ -341,4 +355,8 @@ export const INITIAL_CONFIG: OliConfig = {
   api_port: 9734,
   api_profile: "default",
   api_mode: "agent",
+  default_profile: "default",
+  session_auto_save: true,
+  session_resume_prompt: true,
+  workspace_max_workspaces: 20,
 };

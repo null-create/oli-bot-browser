@@ -151,7 +151,9 @@ export function ChatPanel() {
       {messages.map((m) => (
         <Fragment key={m.id}>
           {m.activity && <TurnActivityBlock activity={m.activity} />}
-          <MessageBubble message={m} />
+          {m.role === "assistant" && m.content.trim() === "" ? null : (
+            <MessageBubble message={m} />
+          )}
         </Fragment>
       ))}
 

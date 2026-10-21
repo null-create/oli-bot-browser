@@ -123,6 +123,107 @@ describe("listSessions", () => {
 
     await expect(listSessions()).rejects.toThrow("404 Not Found");
   });
+
+  it("keeps the tool calls, tool results and turn activity of a message", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetch({
+        sessions: [
+          {
+            ...meta,
+            messages: [
+              {
+                role: "assistant",
+                content: "",
+                tool_calls: [
+                  {
+                    id: "call_0",
+                    type: "function",
+                    function: {
+                      name: "read_file",
+                      arguments: '{"path": "a.py"}',
+                    },
+                  },
+                ],
+              },
+              { role: "tool", content: "contents", tool_call_id: "call_0" },
+              {
+                role: "assistant",
+                content: "here it is",
+                activity: {
+                  thinking: "let me look",
+                  elapsed: 1.5,
+                  tool_calls: [
+                    {
+                      id: "call_0",
+                      name: "read_file",
+                      parameters: { path: "a.py" },
+                      result: "contents",
+                      elapsed: 0.25,
+                    },
+                  ],
+                  sub_agents: [],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    const sessions = await listSessions();
+    const messages = sessions[0].messages;
+
+    expect(messages[0].toolCalls).toEqual([
+      { id: "call_0", name: "read_file", parameters: { path: "a.py" } },
+    ]);
+    expect(messages[1].toolCallId).toBe("call_0");
+    expect(messages[2].serverActivity).toEqual({
+      thinking: "let me look",
+      elapsed: 1.5,
+      tool_calls: [
+        {
+          id: "call_0",
+          name: "read_file",
+          parameters: { path: "a.py" },
+          result: "contents",
+          elapsed: 0.25,
+        },
+      ],
+      sub_agents: [],
+    });
+  });
+
+  it("survives a malformed tool call and activity payload", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetch({
+        sessions: [
+          {
+            ...meta,
+            messages: [
+              {
+                role: "assistant",
+                content: "x",
+                tool_calls: [{ id: "c1", function: { arguments: "not json" } }],
+                activity: { thinking: 5, tool_calls: "nope" },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    const sessions = await listSessions();
+    const message = sessions[0].messages[0];
+    expect(message.toolCalls).toBeUndefined();
+    expect(message.serverActivity).toEqual({
+      thinking: "",
+      elapsed: undefined,
+      tool_calls: [],
+      sub_agents: [],
+    });
+  });
 });
 
 describe("createSession", () => {
@@ -146,6 +247,25 @@ describe("getSession", () => {
 
     expect(fetchMock).toHaveBeenCalledWith("/v1/sessions/s1", undefined);
     expect(s.id).toBe("s1");
+  });
+
+  it("maps the session level todo list", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetch({
+        ...meta,
+        messages: [],
+        todos: [
+          { content: "write it down", status: "completed", priority: "high" },
+        ],
+      }),
+    );
+
+    const s = await getSession("s1");
+
+    expect(s.todos).toEqual([
+      { content: "write it down", status: "completed", priority: "high" },
+    ]);
   });
 
   it("URL-encodes the session id", async () => {

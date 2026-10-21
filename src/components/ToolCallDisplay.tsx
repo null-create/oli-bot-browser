@@ -12,9 +12,11 @@ export function ToolCallDisplay({ call }: { call: ToolCall }) {
     return () => window.clearInterval(timer);
   }, [call.result]);
 
+  // A finished call shows its recorded duration; a restored call that never
+  // recorded one must not fall back to the wall clock.
   const elapsed =
-    call.result !== undefined && call.elapsed !== undefined
-      ? call.elapsed
+    call.result !== undefined
+      ? (call.elapsed ?? 0)
       : (nowMs - call.startTime) / 1000;
   const isError =
     call.result !== undefined && isToolError(call.result);

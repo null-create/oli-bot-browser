@@ -39,7 +39,10 @@ export type OliEvent =
       };
     }
   | { type: "error"; data: { message: string } }
-  | { type: "done"; data: { full_text: string } }
+  | {
+      type: "done";
+      data: { full_text: string; activity?: ServerActivity };
+    }
   | { type: "cleared"; data: Record<string, never> }
   | { type: "session_created"; data: { session: SessionMeta } }
   | {
@@ -67,6 +70,7 @@ export type OliEvent =
         agent_name: string;
         status: "done" | "error";
         full_text: string;
+        todos?: TodoItem[];
       };
     }
   | {
@@ -144,6 +148,21 @@ export type ChatMessage = {
   agentName?: string;
   attachments?: PendingAttachment[];
   activity?: TurnActivity;
+  /** Tool calls requested by an assistant message (persisted transcripts). */
+  toolCalls?: ToolCallRequest[];
+  /** Id of the tool call a persisted tool message answers. */
+  toolCallId?: string;
+  /** Raw turn activity attached by the server to the message closing a turn. */
+  serverActivity?: ServerActivity;
+};
+
+export type ChatLine = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: number;
+  attachments?: PendingAttachment[];
+  activity?: TurnActivity;
 };
 
 export type ToolCall = {
@@ -155,10 +174,48 @@ export type ToolCall = {
   elapsed?: number;
 };
 
+/** A tool call as requested by the model, before it ran. */
+export type ToolCallRequest = {
+  id: string;
+  name: string;
+  parameters: Record<string, unknown>;
+};
+
 export type TurnActivity = {
   toolCalls: ToolCall[];
   thinking: string;
   elapsed?: number;
+};
+
+/** A tool call as recorded by the server for a finished turn. */
+export type ServerToolCall = {
+  id: string;
+  name: string;
+  parameters: Record<string, unknown>;
+  result?: string;
+  elapsed?: number;
+};
+
+/** A dispatched sub-agent run as recorded by the server for a finished turn. */
+export type ServerSubAgent = {
+  task_id: string;
+  agent_name: string;
+  pool_name: string;
+  task: string;
+  status: "running" | "done" | "error";
+  activity: string;
+  full_text: string;
+  text: string;
+  tool_calls: ServerToolCall[];
+  todos: TodoItem[];
+};
+
+/** Everything that happened during a turn, as recorded by the server. */
+export type ServerActivity = {
+  thinking: string;
+  elapsed?: number;
+  tool_calls: ServerToolCall[];
+  sub_agents: ServerSubAgent[];
 };
 
 export type LiveSegment =
@@ -214,6 +271,7 @@ export type Session = {
   totalTokens?: number;
   totalTokensEstimated?: boolean;
   msgCount?: number;
+  todos?: TodoItem[];
 };
 
 export type FsEntry = {

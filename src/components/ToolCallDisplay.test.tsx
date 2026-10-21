@@ -1,16 +1,28 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ToolCall } from "../types";
 import { ToolCallDisplay } from "./ToolCallDisplay";
+
+const NOW = new Date("2026-01-01T00:00:00Z").getTime();
 
 const base: ToolCall = {
   id: "c1",
   name: "bash",
   parameters: { command: "ls -la" },
-  startTime: Date.now() - 1000,
+  startTime: NOW - 1000,
 };
 
-afterEach(cleanup);
+// The running duration is measured against the wall clock, so the clock has
+// to stand still for the pending state to read exactly one second.
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(NOW);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  cleanup();
+});
 
 describe("ToolCallDisplay", () => {
   it("shows pending state with name and params", () => {
@@ -42,5 +54,10 @@ describe("ToolCallDisplay", () => {
     expect(screen.getByText("bash")).toBeTruthy();
     expect(screen.getByText("\u00b7 1.0s")).toBeTruthy();
     expect(screen.queryByText(/^\u00b7 $/)).toBeNull();
+  });
+
+  it("shows no duration for a restored call that never recorded one", () => {
+    render(<ToolCallDisplay call={{ ...base, result: "ok" }} />);
+    expect(screen.getByText("\u00b7 0.0s")).toBeTruthy();
   });
 });

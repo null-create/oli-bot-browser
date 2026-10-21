@@ -27,6 +27,7 @@ import {
   selectProfile as selectProfileApi,
 } from "../lib/profiles";
 import {
+  ChatLine,
   LiveSegment,
   MCPServerConfig,
   OliConfig,
@@ -52,15 +53,11 @@ import {
   sealText,
   setToolResult,
 } from "../lib/liveTurn";
-
-type ChatLine = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: number;
-  attachments?: PendingAttachment[];
-  activity?: TurnActivity;
-};
+import {
+  activityToTurnActivity,
+  buildTranscript,
+  collectSubAgents,
+} from "../lib/transcript";
 
 type AppState = {
   view: OliView;
@@ -123,15 +120,8 @@ function mergeConfig(base: OliConfig, patch: Partial<OliConfig>): OliConfig {
   return next as OliConfig;
 }
 
-function visibleLines(session?: Session): ChatLine[] {
-  return (session?.messages ?? [])
-    .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) => ({
-      id: m.subAgentId ? m.subAgentId : m.id,
-      role: m.role as "user" | "assistant",
-      content: m.content,
-      timestamp: m.timestamp,
-    }));
+function sessionLines(session?: Session): ChatLine[] {
+  return buildTranscript(session?.messages ?? []);
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -374,7 +364,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const elapsed = turnStartedAtRef.current
           ? (now() - turnStartedAtRef.current) / 1000
           : undefined;
-        const activity = collectActivity(segments, elapsed);
+        // The server records what happened during the turn; prefer it so a
+        // reopened session renders exactly like the live one did.
+        const recorded = ev.data.activity;
+        const collected = collectActivity(segments, elapsed);
+        let activity: TurnActivity | undefined = collected;
+        if (
+          recorded &&
+          (recorded.thinking ||
+            recorded.tool_calls?.length ||
+            recorded.sub_agents?.length)
+        ) {
+          const converted = activityToTurnActivity(recorded);
+          activity = {
+            ...converted,
+            toolCalls: converted.toolCalls.length
+              ? converted.toolCalls
+              : (collected?.toolCalls ?? []),
+          };
+        }
         texts.forEach((text, index) => {
           commitAssistantLine(
             text,
@@ -451,7 +459,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setSubAgents((prev) =>
           prev.map((r) =>
             r.task_id === ev.data.task_id
-              ? { ...r, status: ev.data.status, activity: ev.data.status }
+              ? {
+                  ...r,
+                  status: ev.data.status,
+                  activity: ev.data.status,
+                  ...(ev.data.todos ? { todos: ev.data.todos } : {}),
+                }
               : r,
           ),
         );
@@ -580,6 +593,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setMessages([]);
       clearLive();
       setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });
+      setTodos([]);
+      setSubAgents([]);
       activeToolIds.current = [];
     } catch (e) {
       console.error("Failed to create session", e);
@@ -594,7 +609,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activeToolIds.current = [];
     try {
       const s = await getSession(id);
-      setMessages(visibleLines(s));
+      setMessages(sessionLines(s));
+      setTodos(s.todos ?? []);
+      setSubAgents(collectSubAgents(s.messages));
     } catch (e) {
       console.error("Failed to load session", e);
     }
@@ -622,8 +639,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return;
           }
         }
+        // The session list only carries metadata, so fetch the transcript of
+        // the session we are switching to.
+        try {
+          next = await getSession(next.id);
+        } catch (e) {
+          console.error("Failed to load session", e);
+        }
         setCurrentSessionId(next.id);
-        setMessages(visibleLines(next));
+        setMessages(sessionLines(next));
+        setTodos(next.todos ?? []);
+        setSubAgents(collectSubAgents(next.messages));
         clearLive();
         activeToolIds.current = [];
         setUsage({ prompt_tokens: 0, completion_tokens: 0, estimated: false });

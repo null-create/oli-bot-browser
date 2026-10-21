@@ -115,6 +115,14 @@ function makeId(): string {
   return `${now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function mergeConfig(base: OliConfig, patch: Partial<OliConfig>): OliConfig {
+  const next: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined && value !== null) next[key] = value;
+  }
+  return next as OliConfig;
+}
+
 function visibleLines(session?: Session): ChatLine[] {
   return (session?.messages ?? [])
     .filter((m) => m.role === "user" || m.role === "assistant")
@@ -645,8 +653,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch("/v1/config");
       if (!res.ok) return;
-      const data = (await res.json()) as OliConfig;
-      setConfig((prev) => ({ ...prev, ...data }));
+      const data = (await res.json()) as Partial<OliConfig>;
+      setConfig((prev) => mergeConfig(prev, data));
     } catch (e) {
       console.error("Failed to fetch config from server", e);
     }
@@ -660,8 +668,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(cfg),
       });
       if (!res.ok) return false;
-      const data = (await res.json()) as OliConfig;
-      setConfig(data);
+      const data = (await res.json()) as Partial<OliConfig>;
+      setConfig((prev) => mergeConfig(prev, data));
       return true;
     } catch (e) {
       console.error("Failed to save config to server", e);

@@ -46,7 +46,9 @@ but shows no live data.
 - **Styling:** Tailwind CSS ^3.4.16 (PostCSS + Autoprefixer)
 - **Lint/Test:** ESLint ^10 (flat config) + eslint-plugin-react-hooks/react-refresh;
   Vitest ^4 (jsdom) with @testing-library/react for hook tests
-- **Other deps:** `react-markdown` (rendering), `lucide-react` (icons)
+- **Other deps:** `react-markdown` (rendering), `remark-gfm` (GFM tables,
+  strikethrough, task lists), `remark-breaks` (single newline → `<br>`),
+  `lucide-react` (icons)
 - **Package manager:** npm (lockfile v3). Node >= 18 required.
 - **No** state management library, router, test framework, or env vars — the app
   reads no environment variables anywhere.
@@ -64,6 +66,7 @@ src/
                          ChatPanel, ChatInput, MessageBubble, ThinkingBlock,
                          ToolCallDisplay, SessionList, ConfigPage, MCPPage,
                          WorkspacePage, SubAgentView, TodoPanel, ProfileMenu
+  components/Markdown.tsx Shared markdown renderer (react-markdown + remark-gfm)
   components/configFields.ts FIELDS metadata (key/label/type/group) for ConfigPage
   context/AppContext.tsx Global state + WebSocket event reducer
   context/ThemeContext.tsx Active theme; applies data-theme, writes localStorage
@@ -134,6 +137,16 @@ src/
   sidebar + resizer only when expanded and toggles via the `TopBar` button.
   Mobile keeps the full-width overlay drawer. The shell also applies
   `env(safe-area-inset-*)` padding so notched devices aren't clipped.
+- **Markdown:** All assistant/sub-agent output goes through the shared
+  `src/components/Markdown.tsx` — never call `react-markdown` directly. It wires
+  `remark-gfm` (tables, strikethrough, task lists) and `remark-breaks` (single
+  newline → `<br>`), and overrides `a` (opens in a new tab) and `table` (wrapped
+  in `overflow-x-auto` so wide tables scroll). Element styling lives in the
+  `.markdown-body` block in `src/index.css` — headings, lists, blockquotes,
+  tables, task lists — using only `--oli-*` tokens so all six themes retint.
+  Tailwind's preflight strips list markers, heading sizes and blockquote
+  margins, so those rules must stay; removing them silently breaks CommonMark
+  output that has nothing to do with tables.
 
 ## Conventions
 

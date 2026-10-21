@@ -8,9 +8,9 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
 import { ToolCallDisplay } from "./ToolCallDisplay";
 import { AgentPoolConfigView } from "./AgentPoolConfigView";
+import { Markdown } from "./Markdown";
 
 type Tab = "runs" | "config";
 
@@ -67,7 +67,9 @@ function RunCard({ run }: { run: SubAgentRun }) {
                       {m.agentName && ` (${m.agentName})`}
                       {": "}
                     </span>
-                    <ReactMarkdown className="inline">{`${m.content.slice(0, 300)}${m.content.length > 300 ? "..." : ""}`}</ReactMarkdown>
+                    <Markdown className="markdown-body markdown-inline inline">
+                      {`${m.content.slice(0, 300)}${m.content.length > 300 ? "..." : ""}`}
+                    </Markdown>
                   </div>
                 ))}
               </div>

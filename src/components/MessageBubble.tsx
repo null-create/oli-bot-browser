@@ -1,6 +1,6 @@
-import ReactMarkdown from "react-markdown";
 import { User, Bot, AlertTriangle, Paperclip } from "lucide-react";
 import { ChatMessage } from "../types";
+import { Markdown } from "./Markdown";
 
 function fmtTime(ts: number): string {
   const d = new Date(ts);
@@ -87,15 +87,7 @@ export function MessageBubble({
             pending ? "text-oli-accent-bright" : "text-oli-fg"
           }`}
         >
-          <ReactMarkdown
-            components={{
-              a: ({ node: _node, ...props }) => (
-                <a {...props} className="text-oli-info underline" />
-              ),
-            }}
-          >
-            {message.content}
-          </ReactMarkdown>
+          <Markdown>{message.content}</Markdown>
           {pending && (
             <span className="ml-1 inline-block h-3 w-1.5 animate-blink bg-oli-accent align-middle" />
           )}

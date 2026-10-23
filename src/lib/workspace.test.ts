@@ -43,6 +43,17 @@ describe("listDirectory", () => {
 
     await expect(listDirectory("/")).rejects.toThrow("400 Bad Request");
   });
+
+  it("surfaces the server detail on an error response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      mockFetch({ detail: "Permission denied: /root" }, false, 403),
+    );
+
+    await expect(listDirectory("/root")).rejects.toThrow(
+      "Permission denied: /root",
+    );
+  });
 });
 
 describe("fetchWorkspace", () => {

@@ -2,7 +2,16 @@ import { DirectoryListing, WorkspaceState } from "../types";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, init);
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const body = (await res.json()) as { detail?: unknown };
+      if (typeof body?.detail === "string") detail = body.detail.trim();
+    } catch {
+      // Non-JSON error bodies fall back to the status line.
+    }
+    throw new Error(detail || `${res.status} ${res.statusText}`);
+  }
   return (await res.json()) as T;
 }
 

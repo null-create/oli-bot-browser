@@ -113,6 +113,7 @@ src/
                 useSidebarLayout — sidebar width + collapsed state (localStorage)
   lib/          sessions — REST session client (list/create/get/rename/delete)
                 profiles, workspace, agents, attachments — REST clients
+                commands — client-side slash command parsing (/ws)
                 liveTurn, transcript — live-segment and transcript builders
                 format — tool parameter formatting
 ```
@@ -144,7 +145,13 @@ src/
   up to 10 attachments of 10 MB each — which are sent inline as base64.
 - **Workspaces**: the workspaces view browses the server's filesystem
   (`GET /v1/fs/list`) and sets the directory the agent runs in
-  (`PUT /v1/workspace`). Sensitive paths ask for confirmation first.
+  (`PUT /v1/workspace`). Sensitive paths ask for confirmation first. From the
+  chat input, `/ws <path>` switches workspace, `/ws` shows the current and
+  recent workspaces, and `/ws off` clears it.
+- **Chat input**: the textarea auto-grows up to roughly eight lines (~160px) and
+  scrolls beyond that; it refits on typing, pasting and sidebar/width changes.
+  Recognised slash commands (`/ws`) are highlighted as you type, driven by the
+  command registry in `src/lib/commands.ts`.
 - **MCP servers** are managed from the mcp view and persisted server-side in
   `~/.config/oli/mcp_servers.json`.
 - **Turn activity**: each finished turn keeps a collapsed block with the

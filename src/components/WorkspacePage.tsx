@@ -201,8 +201,8 @@ export function WorkspacePage() {
   const doSet = useCallback(
     async (entry: FsEntry) => {
       setError("");
-      const ok = await setWorkspace(entry.path);
-      if (!ok) setError(`failed to set workspace: ${entry.path}`);
+      const failure = await setWorkspace(entry.path);
+      if (failure) setError(`failed to set workspace: ${failure}`);
     },
     [setWorkspace],
   );
@@ -217,7 +217,8 @@ export function WorkspacePage() {
 
   const handleClear = useCallback(async () => {
     setError("");
-    await unsetWorkspace();
+    const failure = await unsetWorkspace();
+    if (failure) setError(`failed to clear workspace: ${failure}`);
   }, [unsetWorkspace]);
 
   const current = workspace?.current ?? null;

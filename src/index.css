@@ -151,6 +151,10 @@
   color: rgb(var(--oli-fg));
 }
 
+.chat-input-highlight-source::selection {
+  color: transparent;
+}
+
 textarea:focus,
 input:focus {
   outline: 1px solid rgb(var(--oli-accent));

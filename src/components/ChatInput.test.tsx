@@ -1,13 +1,36 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { sendMessage } = vi.hoisted(() => ({
-  sendMessage: vi.fn(),
-}));
+const { sendMessage, setWorkspace, unsetWorkspace, listDirectory, state } =
+  vi.hoisted(() => ({
+    sendMessage: vi.fn(),
+    setWorkspace: vi.fn(),
+    unsetWorkspace: vi.fn(),
+    listDirectory: vi.fn(),
+    state: {
+      workspace: {
+        current: "/home/me/proj",
+        sensitive: false,
+        workspaces: ["/home/me/proj", "/tmp"],
+      } as null | {
+        current: string | null;
+        sensitive: boolean;
+        workspaces: string[];
+      },
+    },
+  }));
 
 vi.mock("../context/AppContext", () => ({
-  useApp: () => ({ sendMessage, isGenerating: false }),
+  useApp: () => ({
+    sendMessage,
+    isGenerating: false,
+    workspace: state.workspace,
+    setWorkspace,
+    unsetWorkspace,
+  }),
 }));
+
+vi.mock("../lib/workspace", () => ({ listDirectory }));
 
 import { ChatInput } from "./ChatInput";
 
@@ -23,9 +46,30 @@ function attachFile(name: string, type: string, content: BlobPart = "x") {
   fireEvent.change(input, { target: { files: [file] } });
 }
 
+function typeAndEnter(text: string) {
+  const box = screen.getByRole("textbox");
+  fireEvent.change(box, { target: { value: text } });
+  fireEvent.keyDown(box, { key: "Enter" });
+}
+
 describe("ChatInput attachments", () => {
   beforeEach(() => {
-    sendMessage.mockClear();
+    sendMessage.mockReset();
+    setWorkspace.mockReset();
+    unsetWorkspace.mockReset();
+    listDirectory.mockReset();
+    setWorkspace.mockResolvedValue(null);
+    unsetWorkspace.mockResolvedValue(null);
+    listDirectory.mockResolvedValue({
+      path: "/tmp/foo",
+      sensitive: false,
+      entries: [],
+    });
+    state.workspace = {
+      current: "/home/me/proj",
+      sensitive: false,
+      workspaces: ["/home/me/proj", "/tmp"],
+    };
     vi.stubGlobal(
       "matchMedia",
       vi.fn().mockReturnValue({
@@ -107,11 +151,237 @@ describe("ChatInput attachments", () => {
 
   it("sends a slash-prefixed message to the agent", () => {
     renderInput();
-    fireEvent.change(screen.getByRole("textbox"), {
-      target: { value: "/clear" },
-    });
-    fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+    typeAndEnter("/clear");
 
     expect(sendMessage).toHaveBeenCalledWith("/clear", []);
+  });
+});
+
+describe("ChatInput /ws command", () => {
+  beforeEach(() => {
+    sendMessage.mockReset();
+    setWorkspace.mockReset();
+    unsetWorkspace.mockReset();
+    listDirectory.mockReset();
+    setWorkspace.mockResolvedValue(null);
+    unsetWorkspace.mockResolvedValue(null);
+    listDirectory.mockResolvedValue({
+      path: "/tmp/foo",
+      sensitive: false,
+      entries: [],
+    });
+    state.workspace = {
+      current: "/home/me/proj",
+      sensitive: false,
+      workspaces: ["/home/me/proj", "/tmp"],
+    };
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("sets the workspace without sending a message", async () => {
+    renderInput();
+    typeAndEnter("/ws /tmp/foo");
+
+    await waitFor(() =>
+      expect(setWorkspace).toHaveBeenCalledWith("/tmp/foo"),
+    );
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(screen.getByText(/workspace set to \/tmp\/foo/)).toBeTruthy();
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("");
+  });
+
+  it("asks for confirmation before setting a sensitive path", async () => {
+    listDirectory.mockResolvedValue({
+      path: "/etc",
+      sensitive: true,
+      entries: [],
+    });
+    renderInput();
+    typeAndEnter("/ws /etc");
+
+    await waitFor(() => expect(screen.getByText("sensitive path")).toBeTruthy());
+    expect(setWorkspace).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "confirm" }));
+
+    await waitFor(() => expect(setWorkspace).toHaveBeenCalledWith("/etc"));
+  });
+
+  it("shows the current and recent workspaces", () => {
+    renderInput();
+    typeAndEnter("/ws");
+
+    expect(screen.getByText(/workspace: \/home\/me\/proj/)).toBeTruthy();
+    expect(screen.getByText(/recent: \/home\/me\/proj/)).toBeTruthy();
+    expect(screen.getByText(/usage: \/ws <path>/)).toBeTruthy();
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("clears the workspace", async () => {
+    renderInput();
+    typeAndEnter("/ws off");
+
+    await waitFor(() => expect(unsetWorkspace).toHaveBeenCalledTimes(1));
+    expect(sendMessage).not.toHaveBeenCalled();
+    expect(screen.getByText("workspace cleared")).toBeTruthy();
+  });
+
+  it("shows the server error when setting fails", async () => {
+    setWorkspace.mockResolvedValue("Not a valid directory: /nope");
+    renderInput();
+    typeAndEnter("/ws /nope");
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/workspace not set: Not a valid directory/),
+      ).toBeTruthy(),
+    );
+  });
+});
+
+describe("ChatInput command highlight", () => {
+  beforeEach(() => {
+    sendMessage.mockReset();
+    setWorkspace.mockReset();
+    unsetWorkspace.mockReset();
+    listDirectory.mockReset();
+    setWorkspace.mockResolvedValue(null);
+    unsetWorkspace.mockResolvedValue(null);
+    listDirectory.mockResolvedValue({
+      path: "/tmp/foo",
+      sensitive: false,
+      entries: [],
+    });
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("highlights a recognised command token", () => {
+    renderInput();
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+
+    fireEvent.change(box, { target: { value: "/ws" } });
+
+    const overlay = screen.getByTestId("chat-input-highlight");
+    expect(overlay.getAttribute("aria-hidden")).toBe("true");
+    expect(overlay.textContent).toBe("/ws");
+    expect(
+      overlay.querySelector(".text-oli-accent-bright")?.textContent,
+    ).toBe("/ws");
+    expect(box.className).toContain("text-transparent");
+    expect(box.className).toContain("caret-oli-accent");
+  });
+
+  it("keeps the argument separate from the highlighted token", () => {
+    renderInput();
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+
+    fireEvent.change(box, { target: { value: "/ws /tmp/foo" } });
+
+    const spans = screen.getByTestId("chat-input-highlight").querySelectorAll("span");
+    expect(spans[0].textContent).toBe("/ws");
+    expect(spans[1].textContent).toBe(" /tmp/foo");
+  });
+
+  it("does not highlight partial or unknown commands", () => {
+    renderInput();
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+
+    for (const value of ["/w", "/clear", "hello /ws"]) {
+      fireEvent.change(box, { target: { value } });
+      expect(screen.queryByTestId("chat-input-highlight")).toBeNull();
+      expect(box.className).toContain("text-oli-fg");
+      expect(box.className).not.toContain("text-transparent");
+    }
+  });
+
+  it("keeps the highlight layer in sync when the textarea scrolls", () => {
+    renderInput();
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.change(box, { target: { value: "/ws /tmp/foo" } });
+
+    const overlay = screen.getByTestId("chat-input-highlight");
+    Object.defineProperty(box, "scrollTop", {
+      configurable: true,
+      value: 24,
+    });
+    Object.defineProperty(overlay, "scrollTop", {
+      configurable: true,
+      writable: true,
+      value: 0,
+    });
+
+    fireEvent.scroll(box);
+
+    expect(overlay.scrollTop).toBe(24);
+  });
+});
+
+describe("ChatInput auto-size", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn().mockReturnValue({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("grows the textarea up to the max height", () => {
+    renderInput();
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+    Object.defineProperty(box, "scrollHeight", {
+      configurable: true,
+      get: () => 600,
+    });
+
+    fireEvent.change(box, { target: { value: "a\n".repeat(40) } });
+
+    expect(box.style.height).toBe("160px");
+    expect(box.style.overflowY).toBe("auto");
+  });
+
+  it("keeps short input at one line", () => {
+    renderInput();
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+    Object.defineProperty(box, "scrollHeight", {
+      configurable: true,
+      get: () => 20,
+    });
+
+    fireEvent.change(box, { target: { value: "hello" } });
+
+    expect(box.style.height).toBe("20px");
+    expect(box.style.overflowY).toBe("hidden");
   });
 });

@@ -137,6 +137,20 @@ src/
   sidebar + resizer only when expanded and toggles via the `TopBar` button.
   Mobile keeps the full-width overlay drawer. The shell also applies
   `env(safe-area-inset-*)` padding so notched devices aren't clipped.
+- **Workspace switching:** besides the Workspaces view, the chat input accepts
+  `/ws <path>` (set), `/ws` (show current + recent) and `/ws off` (clear).
+  Parsing lives in `src/lib/commands.ts`; `/ws` is intercepted in `ChatInput`
+  before sending, while every other slash-prefixed message (e.g. `/clear`) still
+  goes to the agent. Setting resolves the path through `GET /v1/fs/list` first so
+  sensitive paths get the same confirmation prompt as the Workspaces view.
+- **Chat input:** the textarea auto-grows up to `MAX_INPUT_HEIGHT` (160px, about
+  eight lines) and scrolls beyond that; it refits when the value or its width
+  changes (including sidebar drags). Slash-command highlighting is
+  registry-driven from `COMMANDS` in `src/lib/commands.ts`: a recognised leading
+  command is drawn accent-bold on an `aria-hidden` overlay while the textarea
+  text stays transparent, so adding a command there highlights it automatically.
+  Keep both layers' text metrics identical; `fitTextarea` also syncs the
+  overlay's scroll offset and scrollbar width.
 - **Markdown:** All assistant/sub-agent output goes through the shared
   `src/components/Markdown.tsx` — never call `react-markdown` directly. It wires
   `remark-gfm` (tables, strikethrough, task lists) and `remark-breaks` (single

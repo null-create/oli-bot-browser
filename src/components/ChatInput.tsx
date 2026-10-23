@@ -2,9 +2,11 @@ import {
   useState,
   useRef,
   useEffect,
+  useLayoutEffect,
   useCallback,
   ChangeEvent,
   KeyboardEvent,
+  UIEvent,
 } from "react";
 import { useApp } from "../context/AppContext";
 import { PendingAttachment } from "../types";
@@ -12,15 +14,38 @@ import {
   fileToAttachment,
   MAX_ATTACHMENTS,
 } from "../lib/attachments";
+import { listDirectory } from "../lib/workspace";
+import {
+  matchCommand,
+  parseSlashCommand,
+  ParsedCommand,
+  WORKSPACE_COMMAND,
+} from "../lib/commands";
 import { SendHorizonal, Trash2, Plus, FileText, X } from "lucide-react";
 
+const MAX_INPUT_HEIGHT = 160;
+
+type Notice = {
+  tone: "ok" | "error" | "info";
+  text: string;
+};
+
 export function ChatInput({ onClear }: { onClear: () => void }) {
-  const { sendMessage, isGenerating } = useApp();
+  const {
+    sendMessage,
+    isGenerating,
+    workspace,
+    setWorkspace,
+    unsetWorkspace,
+  } = useApp();
   const [value, setValue] = useState("");
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [attachError, setAttachError] = useState<string | null>(null);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [confirmPath, setConfirmPath] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const highlightRef = useRef<HTMLDivElement>(null);
   const attachMenuRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,6 +69,113 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showAttachMenu]);
+
+  const fitTextarea = useCallback(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const clamped = el.scrollHeight > MAX_INPUT_HEIGHT;
+    const next = Math.min(el.scrollHeight, MAX_INPUT_HEIGHT);
+    el.style.height = `${next}px`;
+    el.style.overflowY = clamped ? "auto" : "hidden";
+    const overlay = highlightRef.current;
+    if (overlay) {
+      overlay.style.right = `${clamped ? el.offsetWidth - el.clientWidth : 0}px`;
+      overlay.scrollTop = el.scrollTop;
+    }
+  }, []);
+
+  const syncHighlightScroll = useCallback((e: UIEvent<HTMLTextAreaElement>) => {
+    const overlay = highlightRef.current;
+    if (overlay) overlay.scrollTop = e.currentTarget.scrollTop;
+  }, []);
+
+  useLayoutEffect(() => {
+    fitTextarea();
+  }, [value, fitTextarea]);
+
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    let width = el.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth === width) return;
+      width = el.clientWidth;
+      fitTextarea();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [fitTextarea]);
+
+  const applyWorkspace = useCallback(
+    async (path: string) => {
+      const failure = await setWorkspace(path);
+      setConfirmPath(null);
+      if (failure) {
+        setNotice({ tone: "error", text: `workspace not set: ${failure}` });
+      } else {
+        setNotice({ tone: "ok", text: `workspace set to ${path}` });
+      }
+    },
+    [setWorkspace],
+  );
+
+  const setWorkspaceFromPath = useCallback(
+    async (path: string) => {
+      try {
+        const listing = await listDirectory(path);
+        if (listing.sensitive) {
+          setConfirmPath(listing.path);
+          setNotice(null);
+          return;
+        }
+        await applyWorkspace(listing.path);
+      } catch (e) {
+        setNotice({
+          tone: "error",
+          text: e instanceof Error ? e.message : `Failed to open ${path}`,
+        });
+      }
+    },
+    [applyWorkspace],
+  );
+
+  const runCommand = useCallback(
+    (command: ParsedCommand) => {
+      switch (command.kind) {
+        case "workspace-show": {
+          const current = workspace?.current;
+          const recent = workspace?.workspaces ?? [];
+          const lines = [current ? `workspace: ${current}` : "workspace: (none)"];
+          if (recent.length) lines.push(`recent: ${recent.join("  ")}`);
+          lines.push(`usage: ${WORKSPACE_COMMAND.usage}`);
+          setNotice({ tone: "info", text: lines.join("\n") });
+          return;
+        }
+        case "workspace-unset":
+          void unsetWorkspace().then((failure) => {
+            if (failure) {
+              setNotice({
+                tone: "error",
+                text: `workspace not cleared: ${failure}`,
+              });
+            } else {
+              setNotice({ tone: "ok", text: "workspace cleared" });
+            }
+          });
+          return;
+        case "workspace-set":
+          void setWorkspaceFromPath(command.path);
+          return;
+      }
+    },
+    [workspace, unsetWorkspace, setWorkspaceFromPath],
+  );
+
+  const confirmSensitive = useCallback(() => {
+    if (!confirmPath) return;
+    void applyWorkspace(confirmPath);
+  }, [confirmPath, applyWorkspace]);
 
   const handleFiles = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
@@ -82,12 +214,21 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
     const text = value.trim();
     const hasAttachments = attachments.length > 0;
     if ((!text && !hasAttachments) || isGenerating) return;
+    const command = parseSlashCommand(text);
+    if (command) {
+      setValue("");
+      inputRef.current?.focus();
+      runCommand(command);
+      return;
+    }
     sendMessage(text, attachments);
     setValue("");
     setAttachments([]);
     setAttachError(null);
+    setNotice(null);
+    setConfirmPath(null);
     inputRef.current?.focus();
-  }, [value, attachments, isGenerating, sendMessage]);
+  }, [value, attachments, isGenerating, sendMessage, runCommand]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -96,8 +237,64 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
     }
   };
 
+  const command = matchCommand(value);
+
   return (
     <div className="relative border-t border-oli-line bg-oli-surface">
+      {notice && (
+        <div
+          aria-live="polite"
+          className={`flex items-start gap-2 border-b border-oli-line px-2 py-1 text-[10px] ${
+            notice.tone === "error"
+              ? "text-oli-danger"
+              : notice.tone === "ok"
+                ? "text-oli-accent"
+                : "text-oli-muted"
+          }`}
+        >
+          <span className="min-w-0 flex-1 whitespace-pre-line break-all">
+            {notice.text}
+          </span>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="shrink-0 text-oli-muted hover:text-oli-danger"
+            title="Dismiss"
+          >
+            <X size={10} />
+          </button>
+        </div>
+      )}
+      {confirmPath && (
+        <div className="border-b border-oli-line bg-oli-elevated px-2 py-1.5 text-[11px]">
+          <div className="flex items-center gap-2">
+            <span className="shrink-0 text-oli-warn">sensitive path</span>
+            <span
+              className="min-w-0 flex-1 truncate font-mono text-oli-warn"
+              title={confirmPath}
+            >
+              {confirmPath}
+            </span>
+            <button
+              type="button"
+              onClick={confirmSensitive}
+              className="shrink-0 border border-oli-warn px-1.5 py-0.5 text-[10px] text-oli-warn hover:bg-oli-elevated"
+            >
+              confirm
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmPath(null)}
+              className="shrink-0 border border-oli-line px-1.5 py-0.5 text-[10px] text-oli-muted hover:text-oli-fg"
+            >
+              cancel
+            </button>
+          </div>
+          <div className="mt-1 text-[10px] text-oli-muted">
+            This grants the agent read access within this directory.
+          </div>
+        </div>
+      )}
       {(attachments.length > 0 || attachError) && (
         <div className="flex flex-wrap items-center gap-2 border-b border-oli-line px-2 py-1.5">
           {attachments.map((a) => (
@@ -196,16 +393,38 @@ export function ChatInput({ onClear }: { onClear: () => void }) {
           className="hidden"
           onChange={handleFiles}
         />
-        <textarea
-          ref={inputRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          className="flex-1 resize-none border-none bg-transparent text-sm text-oli-fg placeholder:text-oli-accent-dim focus:outline-none focus:ring-0"
-          placeholder={isGenerating ? "generating..." : "type a message..."}
-          disabled={isGenerating}
-        />
+        <div className="relative min-w-0 flex-1">
+          {command && (
+            <div
+              ref={highlightRef}
+              aria-hidden="true"
+              data-testid="chat-input-highlight"
+              className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words text-sm leading-5"
+            >
+              {value.slice(0, command.start)}
+              <span className="font-bold text-oli-accent-bright">
+                {command.token}
+              </span>
+              <span className="text-oli-fg">{command.rest}</span>
+            </div>
+          )}
+          <textarea
+            ref={inputRef}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onScroll={syncHighlightScroll}
+            onKeyDown={handleKeyDown}
+            spellCheck={command ? false : undefined}
+            rows={1}
+            className={`relative w-full resize-none whitespace-pre-wrap break-words border-none bg-transparent text-sm leading-5 placeholder:text-oli-accent-dim focus:outline-none focus:ring-0 ${
+              command
+                ? "chat-input-highlight-source text-transparent caret-oli-accent"
+                : "text-oli-fg"
+            }`}
+            placeholder={isGenerating ? "generating..." : "type a message..."}
+            disabled={isGenerating}
+          />
+        </div>
         {(value.trim() || attachments.length > 0) && (
           <button
             onClick={submit}

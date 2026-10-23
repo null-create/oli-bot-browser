@@ -83,8 +83,8 @@ type AppState = {
   selectProfile: (name: string) => Promise<boolean>;
   workspace: WorkspaceState | null;
   fetchWorkspace: () => Promise<void>;
-  setWorkspace: (path: string) => Promise<boolean>;
-  unsetWorkspace: () => Promise<void>;
+  setWorkspace: (path: string) => Promise<string | null>;
+  unsetWorkspace: () => Promise<string | null>;
   fetchMcpServers: () => Promise<void>;
   addMcpServer: (cfg: MCPServerConfig) => Promise<boolean>;
   updateMcpServer: (name: string, cfg: MCPServerConfig) => Promise<boolean>;
@@ -776,21 +776,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const setWorkspace = useCallback(async (path: string): Promise<boolean> => {
+  const setWorkspace = useCallback(async (path: string): Promise<string | null> => {
     try {
       setWorkspaceState(await setWorkspaceApi(path));
-      return true;
+      return null;
     } catch (e) {
       console.error("Failed to set workspace on server", e);
-      return false;
+      return e instanceof Error
+        ? e.message
+        : `Failed to set workspace: ${path}`;
     }
   }, []);
 
-  const unsetWorkspace = useCallback(async () => {
+  const unsetWorkspace = useCallback(async (): Promise<string | null> => {
     try {
       setWorkspaceState(await unsetWorkspaceApi());
+      return null;
     } catch (e) {
       console.error("Failed to clear workspace on server", e);
+      return e instanceof Error ? e.message : "Failed to clear workspace";
     }
   }, []);
 
